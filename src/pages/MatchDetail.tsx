@@ -4,7 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/supabase';
 import { Match, Vote, Comment, VoteStatus } from '../types';
 import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
 
 const VOTE_OPTIONS = [
   { value: 'attending' as VoteStatus, label: '참석', emoji: '✅', color: 'bg-green-500' },
@@ -163,7 +162,7 @@ export default function MatchDetail() {
           <div className="grid md:grid-cols-2 gap-4">
             <div className="flex items-center text-gray-700">
               <span className="mr-2">📅</span>
-              <span>{format(new Date(match.match_date), 'yyyy년 M월 d일 (E) HH:mm', { locale: ko })}</span>
+              <span>{format(new Date(match.match_date), 'yyyy년 M월 d일 HH:mm')}</span>
             </div>
             <div className="flex items-center text-gray-700">
               <span className="mr-2">📍</span>

@@ -4,7 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/supabase';
 import { Match } from '../types';
 import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
 
 export default function Home() {
   const [matches, setMatches] = useState<Match[]>([]);
@@ -132,7 +131,7 @@ function MatchCard({ match, onClick }: { match: Match; onClick: () => void }) {
       <div className="space-y-2 text-sm">
         <div className="flex items-center text-gray-700">
           <span className="mr-2">📅</span>
-          <span>{format(matchDate, 'yyyy년 M월 d일 (E) HH:mm', { locale: ko })}</span>
+          <span>{format(matchDate, 'yyyy년 M월 d일 HH:mm')}</span>
         </div>
         <div className="flex items-center text-gray-700">
           <span className="mr-2">📍</span>

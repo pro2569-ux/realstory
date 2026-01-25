@@ -4,7 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/supabase';
 import { Notification } from '../types';
 import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
 
 export default function Notifications() {
   const { user } = useAuth();
@@ -80,7 +79,7 @@ export default function Notifications() {
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-bold text-gray-900">{notification.title}</h3>
                   <span className="text-xs text-gray-500">
-                    {format(new Date(notification.created_at), 'M월 d일 HH:mm', { locale: ko })}
+                    {format(new Date(notification.created_at), 'M월 d일 HH:mm')}
                   </span>
                 </div>
                 <p className="text-gray-700">{notification.message}</p>
