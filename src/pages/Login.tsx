@@ -41,7 +41,6 @@ export default function Login() {
         <div className="text-center mb-6 sm:mb-8">
           <div className="text-5xl sm:text-6xl mb-3">⚽</div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">FC실화</h1>
-          <p className="text-sm sm:text-base text-gray-600">풋살 투표 시스템</p>
         </div>
 
         <div className="flex gap-2 mb-6">
