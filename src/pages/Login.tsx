@@ -36,19 +36,20 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">⚽ FC실화</h1>
-          <p className="text-gray-600">풋살 투표 시스템</p>
+    <div className="min-h-screen bg-gradient-to-br from-green-400 via-blue-400 to-purple-500 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-md">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="text-5xl sm:text-6xl mb-3">⚽</div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">FC실화</h1>
+          <p className="text-sm sm:text-base text-gray-600">풋살 투표 시스템</p>
         </div>
 
         <div className="flex gap-2 mb-6">
           <button
             onClick={() => setIsLogin(true)}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${
+            className={`flex-1 py-2.5 sm:py-3 px-4 rounded-xl font-medium transition-all ${
               isLogin
-                ? 'bg-green-500 text-white'
+                ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white shadow-lg'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -56,9 +57,9 @@ export default function Login() {
           </button>
           <button
             onClick={() => setIsLogin(false)}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${
+            className={`flex-1 py-2.5 sm:py-3 px-4 rounded-xl font-medium transition-all ${
               !isLogin
-                ? 'bg-green-500 text-white'
+                ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white shadow-lg'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -69,14 +70,14 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 이름
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
                 placeholder="홍길동"
                 required
               />
@@ -84,36 +85,36 @@ export default function Login() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               이메일
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
               placeholder="email@example.com"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               비밀번호
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
               placeholder="••••••••"
               required
             />
           </div>
 
           {error && (
-            <div className={`p-3 rounded-lg ${
-              error.includes('완료') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+            <div className={`p-3 rounded-xl text-sm ${
+              error.includes('완료') ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
             }`}>
               {error}
             </div>
@@ -122,7 +123,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-green-500 text-white py-3 rounded-lg font-medium hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white py-3 sm:py-4 rounded-xl font-medium hover:from-green-600 hover:to-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg text-base sm:text-lg"
           >
             {loading ? '처리중...' : isLogin ? '로그인' : '회원가입'}
           </button>
