@@ -35,15 +35,16 @@ export function shareMatchToKakao(match: {
   const dateStr = `${matchDate.getFullYear()}년 ${matchDate.getMonth() + 1}월 ${matchDate.getDate()}일`;
   const timeStr = `${match.match_start_time ?? 0}시 - ${match.match_end_time ?? 0}시`;
 
-  // 현재 URL 기반으로 경기 상세 페이지 URL 생성
-  const shareUrl = `${window.location.origin}/match/${match.id}`;
+  // 배포된 URL을 사용 (환경변수에서 가져오거나 현재 origin 사용)
+  const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+  const shareUrl = `${appUrl}/match/${match.id}`;
 
   window.Kakao.Share.sendDefault({
     objectType: 'feed',
     content: {
       title: `⚽ ${match.title}`,
       description: `📅 ${dateStr} ${timeStr}\n📍 ${match.location}\n\n${match.description}`,
-      imageUrl: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800',
+      imageUrl: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&q=80',
       link: {
         mobileWebUrl: shareUrl,
         webUrl: shareUrl,

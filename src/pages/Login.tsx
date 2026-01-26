@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Login() {
@@ -11,6 +11,10 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // 로그인 후 돌아갈 페이지 (카톡 공유 링크에서 온 경우 등)
+  const from = (location.state as any)?.from || '/';
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -21,7 +25,8 @@ export default function Login() {
       if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) throw error;
-        navigate('/');
+        // 원래 가려던 페이지로 이동
+        navigate(from, { replace: true });
       } else {
         const { error } = await signUp(email, password, name);
         if (error) throw error;
