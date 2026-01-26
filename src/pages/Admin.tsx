@@ -162,16 +162,24 @@ function MatchForm({ match, onClose }: { match: Match | null; onClose: () => voi
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    
+
     try {
+      let result;
       if (match) {
-        await db.updateMatch(match.id, formData);
+        result = await db.updateMatch(match.id, formData);
       } else {
-        await db.createMatch({
+        result = await db.createMatch({
           ...formData,
           created_by: user?.id,
         });
       }
+
+      if (result.error) {
+        console.error('Error saving match:', result.error);
+        alert(`저장 중 오류가 발생했습니다: ${result.error.message}`);
+        return;
+      }
+
       onClose();
     } catch (error) {
       console.error('Error saving match:', error);
