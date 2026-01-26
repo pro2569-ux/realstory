@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -9,12 +9,20 @@ export default function Login() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { user, signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   // 로그인 후 돌아갈 페이지 (카톡 공유 링크에서 온 경우 등)
   const from = (location.state as any)?.from || '/';
+
+  // user가 로그인되면 자동으로 원래 페이지로 이동
+  useEffect(() => {
+    if (user && !loading) {
+      console.log('✅ User logged in, redirecting to:', from);
+      navigate(from, { replace: true });
+    }
+  }, [user, loading, from, navigate]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,17 +33,16 @@ export default function Login() {
       if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) throw error;
-        // 원래 가려던 페이지로 이동
-        navigate(from, { replace: true });
+        // useEffect에서 자동으로 리다이렉트됨
       } else {
         const { error } = await signUp(email, password, name);
         if (error) throw error;
         setError('회원가입이 완료되었습니다. 로그인해주세요.');
         setIsLogin(true);
+        setLoading(false);
       }
     } catch (error: any) {
       setError(error.message || '오류가 발생했습니다.');
-    } finally {
       setLoading(false);
     }
   }
