@@ -13,6 +13,8 @@ export interface Match {
   title: string;
   description: string;
   match_date: string;
+  match_start_time?: number;
+  match_end_time?: number;
   location: string;
   max_players: number;
   created_by: string;

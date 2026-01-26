@@ -68,7 +68,11 @@ export default function MatchDetail() {
           note: voteNote,
           updated_at: new Date().toISOString(),
         });
-        if (error) throw error;
+        if (error) {
+          console.error('Error updating vote:', error);
+          alert(`투표 업데이트 중 오류가 발생했습니다: ${error.message}`);
+          return;
+        }
         setUserVote(data);
       } else {
         // Create new vote
@@ -78,15 +82,19 @@ export default function MatchDetail() {
           status,
           note: voteNote,
         });
-        if (error) throw error;
+        if (error) {
+          console.error('Error creating vote:', error);
+          alert(`투표 생성 중 오류가 발생했습니다: ${error.message}`);
+          return;
+        }
         setUserVote(data);
       }
-      
+
       // Reload votes
       loadMatchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error voting:', error);
-      alert('투표 중 오류가 발생했습니다.');
+      alert(`투표 중 오류가 발생했습니다: ${error?.message || '알 수 없는 오류'}`);
     }
   }
 
@@ -99,13 +107,17 @@ export default function MatchDetail() {
         user_id: user.id,
         content: commentText,
       });
-      
-      if (error) throw error;
+
+      if (error) {
+        console.error('Error posting comment:', error);
+        alert(`댓글 작성 중 오류가 발생했습니다: ${error.message}`);
+        return;
+      }
       setCommentText('');
       loadMatchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error posting comment:', error);
-      alert('댓글 작성 중 오류가 발생했습니다.');
+      alert(`댓글 작성 중 오류가 발생했습니다: ${error?.message || '알 수 없는 오류'}`);
     }
   }
 
@@ -162,7 +174,7 @@ export default function MatchDetail() {
           <div className="grid md:grid-cols-2 gap-4">
             <div className="flex items-center text-gray-700">
               <span className="mr-2">📅</span>
-              <span>{format(new Date(match.match_date), 'yyyy년 M월 d일 HH:mm')}</span>
+              <span>{format(new Date(match.match_date), 'yyyy년 M월 d일')} {match.match_start_time ?? 0}시 - {match.match_end_time ?? 0}시</span>
             </div>
             <div className="flex items-center text-gray-700">
               <span className="mr-2">📍</span>

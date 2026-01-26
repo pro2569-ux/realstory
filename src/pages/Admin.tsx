@@ -109,7 +109,7 @@ export default function Admin() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">
-                      {format(new Date(match.match_date), 'yyyy-MM-dd HH:mm')}
+                      {format(new Date(match.match_date), 'yyyy-MM-dd')} {match.match_start_time ?? 0}시 - {match.match_end_time ?? 0}시
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -154,7 +154,9 @@ function MatchForm({ match, onClose }: { match: Match | null; onClose: () => voi
   const [formData, setFormData] = useState({
     title: match?.title || '',
     description: match?.description || '',
-    match_date: match?.match_date ? format(new Date(match.match_date), "yyyy-MM-dd'T'HH:mm") : '',
+    match_date: match?.match_date ? format(new Date(match.match_date), 'yyyy-MM-dd') : '',
+    match_start_time: match?.match_start_time ?? 19,
+    match_end_time: match?.match_end_time ?? 21,
     location: match?.location || '',
     max_players: match?.max_players || 12,
     status: match?.status || 'upcoming',
@@ -164,12 +166,18 @@ function MatchForm({ match, onClose }: { match: Match | null; onClose: () => voi
     e.preventDefault();
 
     try {
+      // 날짜를 ISO 형식으로 변환 (시간은 00:00:00으로 설정)
+      const matchData = {
+        ...formData,
+        match_date: new Date(formData.match_date + 'T00:00:00').toISOString(),
+      };
+
       let result;
       if (match) {
-        result = await db.updateMatch(match.id, formData);
+        result = await db.updateMatch(match.id, matchData);
       } else {
         result = await db.createMatch({
-          ...formData,
+          ...matchData,
           created_by: user?.id,
         });
       }
@@ -223,15 +231,53 @@ function MatchForm({ match, onClose }: { match: Match | null; onClose: () => voi
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              날짜 및 시간
+              날짜
             </label>
             <input
-              type="datetime-local"
+              type="date"
               value={formData.match_date}
               onChange={(e) => setFormData({ ...formData, match_date: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               required
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                시작 시간
+              </label>
+              <select
+                value={formData.match_start_time}
+                onChange={(e) => setFormData({ ...formData, match_start_time: parseInt(e.target.value) })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                required
+              >
+                {Array.from({ length: 24 }, (_, i) => (
+                  <option key={i} value={i}>
+                    {i}시
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                종료 시간
+              </label>
+              <select
+                value={formData.match_end_time}
+                onChange={(e) => setFormData({ ...formData, match_end_time: parseInt(e.target.value) })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                required
+              >
+                {Array.from({ length: 24 }, (_, i) => (
+                  <option key={i} value={i}>
+                    {i}시
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div>

@@ -134,7 +134,9 @@ function MatchCard({ match, onClick }: { match: Match; onClick: () => void }) {
         <div className="space-y-2 text-sm mb-4">
           <div className="flex items-center text-gray-700">
             <span className="mr-2 text-lg">📅</span>
-            <span className="text-xs sm:text-sm">{format(matchDate, 'yyyy년 M월 d일 HH:mm')}</span>
+            <span className="text-xs sm:text-sm">
+              {format(matchDate, 'yyyy년 M월 d일')} {match.match_start_time ?? 0}시 - {match.match_end_time ?? 0}시
+            </span>
           </div>
           <div className="flex items-center text-gray-700">
             <span className="mr-2 text-lg">📍</span>
