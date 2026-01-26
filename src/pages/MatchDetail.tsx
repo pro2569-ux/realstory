@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/supabase';
+import { shareMatchToKakao } from '../lib/kakao';
 import { Match, Vote, Comment, VoteStatus } from '../types';
 import { format } from 'date-fns';
 
@@ -169,8 +170,18 @@ export default function MatchDetail() {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Match Info */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <p className="text-gray-700 mb-4">{match.description}</p>
-          
+          <div className="flex justify-between items-start mb-4">
+            <p className="text-gray-700 flex-1">{match.description}</p>
+            <button
+              onClick={() => shareMatchToKakao(match)}
+              className="ml-4 px-4 py-2 bg-yellow-400 text-gray-900 rounded-lg hover:bg-yellow-500 transition font-medium flex items-center gap-2 whitespace-nowrap"
+              title="카카오톡으로 공유하기"
+            >
+              <span>💬</span>
+              <span className="hidden sm:inline">카톡 공유</span>
+            </button>
+          </div>
+
           <div className="grid md:grid-cols-2 gap-4">
             <div className="flex items-center text-gray-700">
               <span className="mr-2">📅</span>
