@@ -31,17 +31,17 @@ export default function Login() {
 
     try {
       if (isLogin) {
-        const { error, isDormant } = await signIn(email, password);
+        const { error, isDormant, userId } = await signIn(email, password);
         if (error) throw error;
 
         // 휴면회원 처리
-        if (isDormant) {
+        if (isDormant && userId) {
           const confirmActivate = window.confirm(
             '휴면회원입니다. 휴면을 해지하시겠습니까?\n\n"확인"을 누르시면 휴면이 해지되고 로그인됩니다.'
           );
 
           if (confirmActivate) {
-            await activateDormantUser();
+            await activateDormantUser(userId);
             // useEffect에서 자동으로 리다이렉트됨
           } else {
             // 휴면 해지 거부 시 로그아웃

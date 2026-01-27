@@ -7,10 +7,10 @@ interface AuthContextType {
   user: User | null;
   supabaseUser: SupabaseUser | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any; isDormant?: boolean }>;
+  signIn: (email: string, password: string) => Promise<{ error: any; isDormant?: boolean; userId?: string }>;
   signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  activateDormantUser: () => Promise<void>;
+  activateDormantUser: (userId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -76,7 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (userData?.role === 'dormant') {
-        return { error: null, isDormant: true };
+        return { error: null, isDormant: true, userId: data.user.id };
       }
     }
 
@@ -115,13 +115,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSupabaseUser(null);
   }
 
-  async function activateDormantUser() {
-    if (!supabaseUser) return;
-
+  async function activateDormantUser(userId: string) {
     const { data } = await supabase
       .from('users')
       .update({ role: 'member' })
-      .eq('id', supabaseUser.id)
+      .eq('id', userId)
       .select()
       .single();
 
