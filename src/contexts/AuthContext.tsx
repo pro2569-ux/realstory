@@ -7,9 +7,10 @@ interface AuthContextType {
   user: User | null;
   supabaseUser: SupabaseUser | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: any; isDormant?: boolean }>;
   signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  activateDormantUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -62,8 +63,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signIn(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) return { error };
+
+    // 휴면회원인지 확인
+    if (data.user) {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+
+      if (userData?.role === 'dormant') {
+        return { error: null, isDormant: true };
+      }
+    }
+
+    return { error: null, isDormant: false };
   }
 
   async function signUp(email: string, password: string, name: string) {
@@ -75,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) return { error };
 
     if (data.user) {
-      // Create user profile
+      // Create user profile with default role
       const { error: profileError } = await supabase
         .from('users')
         .insert({
@@ -83,6 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: data.user.email,
           name,
           is_admin: false,
+          role: 'member',
         });
 
       if (profileError) return { error: profileError };
@@ -97,6 +115,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSupabaseUser(null);
   }
 
+  async function activateDormantUser() {
+    if (!supabaseUser) return;
+
+    const { data } = await supabase
+      .from('users')
+      .update({ role: 'member' })
+      .eq('id', supabaseUser.id)
+      .select()
+      .single();
+
+    if (data) {
+      setUser(data);
+    }
+  }
+
   const value = {
     user,
     supabaseUser,
@@ -104,6 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signUp,
     signOut,
+    activateDormantUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
