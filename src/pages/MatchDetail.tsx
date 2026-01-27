@@ -346,17 +346,29 @@ export default function MatchDetail() {
           </div>
 
           <div className="space-y-4">
-            {comments.map((comment) => (
-              <div key={comment.id} className="border-l-4 border-green-500 pl-4 py-2">
-                <div className="flex justify-between items-start mb-1">
-                  <span className="font-medium text-gray-900">{comment.user?.name}</span>
-                  <span className="text-sm text-gray-500">
-                    {format(new Date(comment.created_at), 'M월 d일 HH:mm')}
-                  </span>
+            {comments.map((comment) => {
+              // 댓글 작성자의 투표 상태 찾기
+              const authorVote = votes.find(v => v.user_id === comment.user_id);
+              const borderColor = authorVote
+                ? authorVote.status === 'attending' ? 'border-green-500'
+                : authorVote.status === 'not_attending' ? 'border-red-500'
+                : authorVote.status === 'maybe' ? 'border-yellow-500'
+                : authorVote.status === 'late' ? 'border-orange-500'
+                : 'border-gray-300'
+                : 'border-gray-300';
+
+              return (
+                <div key={comment.id} className={`border-l-4 ${borderColor} pl-4 py-2`}>
+                  <div className="flex justify-between items-start mb-1">
+                    <span className="font-medium text-gray-900">{comment.user?.name}</span>
+                    <span className="text-sm text-gray-500">
+                      {format(new Date(comment.created_at), 'M월 d일 HH:mm')}
+                    </span>
+                  </div>
+                  <p className="text-gray-700">{comment.content}</p>
                 </div>
-                <p className="text-gray-700">{comment.content}</p>
-              </div>
-            ))}
+              );
+            })}
             
             {comments.length === 0 && (
               <p className="text-center text-gray-500 py-8">아직 댓글이 없습니다.</p>
