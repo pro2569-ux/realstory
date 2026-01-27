@@ -41,12 +41,29 @@ export default function MatchDetail() {
       ]);
 
       if (matchRes.error) throw matchRes.error;
-      setMatch(matchRes.data);
-      setVotes(votesRes.data || []);
+
+      const matchData = matchRes.data;
+      const votesData = votesRes.data || [];
+
+      // 투표 마감 시 자동 상태 변경
+      if (matchData && matchData.status === 'upcoming' && matchData.vote_deadline) {
+        const deadline = new Date(matchData.vote_deadline);
+        if (deadline < new Date()) {
+          const attendCount = votesData.filter(v => v.status === 'attending' || v.status === 'late').length;
+          const newStatus = attendCount >= matchData.min_players ? 'completed' : 'cancelled';
+
+          // 상태 업데이트
+          await db.updateMatch(matchData.id, { status: newStatus });
+          matchData.status = newStatus;
+        }
+      }
+
+      setMatch(matchData);
+      setVotes(votesData);
       setComments(commentsRes.data || []);
 
       // Check if user already voted
-      const existingVote = (votesRes.data || []).find(v => v.user_id === user?.id);
+      const existingVote = votesData.find(v => v.user_id === user?.id);
       if (existingVote) {
         setUserVote(existingVote);
         setVoteNote(existingVote.note || '');
@@ -151,7 +168,12 @@ export default function MatchDetail() {
     count: votes.filter(v => v.status === option.value).length,
   }));
 
-  const attendingCount = votes.filter(v => v.status === 'attending').length;
+  const attendingCount = votes.filter(v => v.status === 'attending' || v.status === 'late').length;
+
+  // 투표 마감 여부 체크
+  const isVotingClosed = match.vote_deadline
+    ? new Date(match.vote_deadline) < new Date()
+    : false;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -195,39 +217,71 @@ export default function MatchDetail() {
             </div>
             <div className="flex items-center text-gray-700">
               <span className="mr-2">👥</span>
-              <span>최대 {match.max_players}명 (현재 {attendingCount}명 참석)</span>
+              <span>최소 {match.min_players}명 (현재 {attendingCount}명 참석)</span>
+              {attendingCount >= match.min_players && (
+                <span className="ml-2 text-green-600 font-medium">✓ 성립</span>
+              )}
             </div>
+            {match.vote_deadline && (
+              <div className="flex items-center text-gray-700">
+                <span className="mr-2">⏰</span>
+                <span>
+                  투표 마감: {format(new Date(match.vote_deadline), 'M월 d일 HH:mm')}
+                  {isVotingClosed && <span className="ml-2 text-red-500 font-medium">(마감됨)</span>}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Vote Section */}
         <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-6">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">참석 여부 투표</h2>
-          
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            {VOTE_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => handleVote(option.value)}
-                className={`p-4 sm:p-5 rounded-xl border-2 transition-all ${
-                  userVote?.status === option.value
-                    ? `${option.color} text-white border-transparent shadow-lg scale-105`
-                    : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:shadow-md'
-                }`}
-              >
-                <div className="text-3xl sm:text-4xl mb-2">{option.emoji}</div>
-                <div className="font-bold text-sm sm:text-base">{option.label}</div>
-              </button>
-            ))}
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900">참석 여부 투표</h2>
+            {isVotingClosed && (
+              <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">
+                투표 마감
+              </span>
+            )}
           </div>
 
-          <textarea
-            value={voteNote}
-            onChange={(e) => setVoteNote(e.target.value)}
-            placeholder="메모 (선택사항)"
-            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
-            rows={2}
-          />
+          {isVotingClosed ? (
+            <div className="text-center py-8 bg-gray-50 rounded-xl">
+              <p className="text-gray-500 mb-2">투표가 마감되었습니다.</p>
+              <p className="text-sm text-gray-400">
+                {attendingCount >= match.min_players
+                  ? `✅ 최소 인원(${match.min_players}명) 충족 - 경기 진행`
+                  : `❌ 최소 인원(${match.min_players}명) 미달 - 경기 취소`}
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {VOTE_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => handleVote(option.value)}
+                    className={`p-4 sm:p-5 rounded-xl border-2 transition-all ${
+                      userVote?.status === option.value
+                        ? `${option.color} text-white border-transparent shadow-lg scale-105`
+                        : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:shadow-md'
+                    }`}
+                  >
+                    <div className="text-3xl sm:text-4xl mb-2">{option.emoji}</div>
+                    <div className="font-bold text-sm sm:text-base">{option.label}</div>
+                  </button>
+                ))}
+              </div>
+
+              <textarea
+                value={voteNote}
+                onChange={(e) => setVoteNote(e.target.value)}
+                placeholder="메모 (선택사항)"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                rows={2}
+              />
+            </>
+          )}
         </div>
 
         {/* Vote Statistics */}
