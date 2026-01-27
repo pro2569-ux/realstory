@@ -170,15 +170,17 @@ export default function MatchDetail() {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Match Info */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="flex justify-between items-start mb-4">
+          <div className="flex justify-between items-start gap-3 mb-4">
             <p className="text-gray-700 flex-1">{match.description}</p>
             <button
               onClick={() => shareMatchToKakao(match)}
-              className="ml-4 px-4 py-2 bg-yellow-400 text-gray-900 rounded-lg hover:bg-yellow-500 transition font-medium flex items-center gap-2 whitespace-nowrap"
+              className="flex-shrink-0 w-10 h-10 sm:w-auto sm:h-auto sm:px-4 sm:py-2 bg-[#FEE500] text-[#3C1E1E] rounded-full sm:rounded-lg hover:bg-[#FDD835] active:scale-95 transition-all font-medium flex items-center justify-center gap-2 shadow-md"
               title="카카오톡으로 공유하기"
             >
-              <span>💬</span>
-              <span className="hidden sm:inline">카톡 공유</span>
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 3C6.48 3 2 6.58 2 11c0 2.8 1.8 5.27 4.5 6.7-.2.77-.7 2.8-.8 3.2-.13.5.18.5.38.36.16-.1 2.46-1.67 3.46-2.36.48.06.97.1 1.46.1 5.52 0 10-3.58 10-8 0-4.42-4.48-8-10-8z"/>
+              </svg>
+              <span className="hidden sm:inline text-sm font-semibold">공유</span>
             </button>
           </div>
 
@@ -272,18 +274,18 @@ export default function MatchDetail() {
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">댓글</h2>
           
-          <div className="flex gap-2 mb-6">
+          <div className="flex flex-row gap-2 mb-6">
             <input
               type="text"
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               placeholder="댓글을 입력하세요..."
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="flex-1 min-w-0 px-3 sm:px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-sm sm:text-base"
               onKeyPress={(e) => e.key === 'Enter' && handleComment()}
             />
             <button
               onClick={handleComment}
-              className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+              className="flex-shrink-0 px-4 sm:px-6 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 active:scale-95 transition-all font-medium text-sm sm:text-base shadow-md"
             >
               작성
             </button>
