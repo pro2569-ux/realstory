@@ -285,7 +285,7 @@ export default function MatchDetail() {
             />
             <button
               onClick={handleComment}
-              className="flex-shrink-0 px-4 sm:px-6 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 active:scale-95 transition-all font-medium text-sm sm:text-base shadow-md"
+              className="flex-shrink-0 px-5 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 active:scale-95 transition-all font-medium text-sm shadow-md whitespace-nowrap"
             >
               작성
             </button>
