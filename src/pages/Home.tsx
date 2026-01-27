@@ -144,7 +144,7 @@ function MatchCard({ match, onClick }: { match: Match; onClick: () => void }) {
           </div>
           <div className="flex items-center text-gray-700">
             <span className="mr-2 text-lg">👥</span>
-            <span className="text-xs sm:text-sm">최대 {match.max_players}명</span>
+            <span className="text-xs sm:text-sm">최소 {match.min_players}명</span>
           </div>
         </div>
 

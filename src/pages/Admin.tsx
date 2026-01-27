@@ -130,7 +130,7 @@ function MatchForm({ match, onClose }: { match: Match | null; onClose: () => voi
     match_end_time: match?.match_end_time ?? 21,
     vote_deadline: match?.vote_deadline ? format(new Date(match.vote_deadline), "yyyy-MM-dd'T'HH:mm") : '',
     location: match?.location || '',
-    max_players: match?.max_players || 12,
+    min_players: match?.min_players || 10,
     status: match?.status || 'upcoming',
   });
 
@@ -281,16 +281,17 @@ function MatchForm({ match, onClose }: { match: Match | null; onClose: () => voi
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              최대 인원
+              최소 인원
             </label>
             <input
               type="number"
-              value={formData.max_players}
-              onChange={(e) => setFormData({ ...formData, max_players: parseInt(e.target.value) })}
+              value={formData.min_players}
+              onChange={(e) => setFormData({ ...formData, min_players: parseInt(e.target.value) })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               min="1"
               required
             />
+            <p className="text-xs text-gray-500 mt-1">투표 마감 시 최소 인원 미만이면 경기 취소</p>
           </div>
 
           <div>

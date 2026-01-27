@@ -17,7 +17,7 @@ export interface Match {
   match_end_time?: number;
   vote_deadline?: string;
   location: string;
-  max_players: number;
+  min_players: number;
   created_by: string;
   created_at: string;
   status: 'upcoming' | 'completed' | 'cancelled';
