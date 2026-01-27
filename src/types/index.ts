@@ -1,10 +1,12 @@
 export type VoteStatus = 'attending' | 'not_attending' | 'maybe' | 'late';
+export type UserRole = 'main_admin' | 'sub_admin' | 'member' | 'dormant';
 
 export interface User {
   id: string;
   email: string;
   name: string;
   is_admin: boolean;
+  role: UserRole;
   created_at: string;
 }
 

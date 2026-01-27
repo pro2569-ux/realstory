@@ -9,7 +9,7 @@ export default function Login() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { user, signIn, signUp } = useAuth();
+  const { user, signIn, signUp, activateDormantUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -31,8 +31,25 @@ export default function Login() {
 
     try {
       if (isLogin) {
-        const { error } = await signIn(email, password);
+        const { error, isDormant } = await signIn(email, password);
         if (error) throw error;
+
+        // 휴면회원 처리
+        if (isDormant) {
+          const confirmActivate = window.confirm(
+            '휴면회원입니다. 휴면을 해지하시겠습니까?\n\n"확인"을 누르시면 휴면이 해지되고 로그인됩니다.'
+          );
+
+          if (confirmActivate) {
+            await activateDormantUser();
+            // useEffect에서 자동으로 리다이렉트됨
+          } else {
+            // 휴면 해지 거부 시 로그아웃
+            setError('휴면 해지를 취소하셨습니다. 휴면 해지 후 이용 가능합니다.');
+            setLoading(false);
+            return;
+          }
+        }
         // useEffect에서 자동으로 리다이렉트됨
       } else {
         const { error } = await signUp(email, password, name);

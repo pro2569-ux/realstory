@@ -142,4 +142,34 @@ export const db = {
       .eq('id', notificationId);
     return { error };
   },
+
+  // User management operations
+  async getAllUsers() {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .order('created_at', { ascending: false });
+    return { data, error };
+  },
+
+  async updateUserRole(userId: string, role: string) {
+    const isAdmin = role === 'main_admin' || role === 'sub_admin';
+    const { data, error } = await supabase
+      .from('users')
+      .update({ role, is_admin: isAdmin })
+      .eq('id', userId)
+      .select()
+      .single();
+    return { data, error };
+  },
+
+  async activateDormantUser(userId: string) {
+    const { data, error } = await supabase
+      .from('users')
+      .update({ role: 'member' })
+      .eq('id', userId)
+      .select()
+      .single();
+    return { data, error };
+  },
 };
