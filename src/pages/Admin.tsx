@@ -157,6 +157,7 @@ function MatchForm({ match, onClose }: { match: Match | null; onClose: () => voi
     match_date: match?.match_date ? format(new Date(match.match_date), 'yyyy-MM-dd') : '',
     match_start_time: match?.match_start_time ?? 19,
     match_end_time: match?.match_end_time ?? 21,
+    vote_deadline: match?.vote_deadline ? format(new Date(match.vote_deadline), "yyyy-MM-dd'T'HH:mm") : '',
     location: match?.location || '',
     max_players: match?.max_players || 12,
     status: match?.status || 'upcoming',
@@ -166,10 +167,11 @@ function MatchForm({ match, onClose }: { match: Match | null; onClose: () => voi
     e.preventDefault();
 
     try {
-      // 날짜를 ISO 형식으로 변환 (시간은 00:00:00으로 설정)
+      // 날짜를 ISO 형식으로 변환
       const matchData = {
         ...formData,
         match_date: new Date(formData.match_date + 'T00:00:00').toISOString(),
+        vote_deadline: formData.vote_deadline ? new Date(formData.vote_deadline).toISOString() : null,
       };
 
       let result;
@@ -231,7 +233,7 @@ function MatchForm({ match, onClose }: { match: Match | null; onClose: () => voi
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              날짜
+              경기 날짜
             </label>
             <input
               type="date"
@@ -240,6 +242,19 @@ function MatchForm({ match, onClose }: { match: Match | null; onClose: () => voi
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               required
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              투표 마감일시
+            </label>
+            <input
+              type="datetime-local"
+              value={formData.vote_deadline}
+              onChange={(e) => setFormData({ ...formData, vote_deadline: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+            <p className="text-xs text-gray-500 mt-1">설정하지 않으면 투표 마감 없음</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
