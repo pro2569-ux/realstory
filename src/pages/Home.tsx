@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/supabase';
-import { shareMatchToKakao } from '../lib/kakao';
 import { Match } from '../types';
 import { format } from 'date-fns';
 
@@ -113,11 +112,6 @@ function MatchCard({ match, onClick }: { match: Match; onClick: () => void }) {
   const matchDate = new Date(match.match_date);
   const isCompleted = match.status === 'completed';
 
-  const handleShare = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    shareMatchToKakao(match);
-  };
-
   return (
     <div
       onClick={onClick}
@@ -130,18 +124,9 @@ function MatchCard({ match, onClick }: { match: Match; onClick: () => void }) {
       <div className="p-4 sm:p-6">
         <div className="flex justify-between items-start mb-3">
           <h3 className="text-lg sm:text-xl font-bold text-gray-900 flex-1">{match.title}</h3>
-          <div className="flex items-center gap-2">
-            {isCompleted && (
-              <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded-full">완료</span>
-            )}
-            <button
-              onClick={handleShare}
-              className="p-2 bg-yellow-400 text-gray-900 rounded-lg hover:bg-yellow-500 transition"
-              title="카카오톡으로 공유하기"
-            >
-              💬
-            </button>
-          </div>
+          {isCompleted && (
+            <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded-full">완료</span>
+          )}
         </div>
 
         <p className="text-gray-600 text-sm mb-4 line-clamp-2">{match.description}</p>

@@ -80,69 +80,40 @@ export default function Admin() {
           />
         )}
 
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  제목
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  날짜
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  장소
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  상태
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  작업
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {matches.map((match) => (
-                <tr key={match.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{match.title}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">
-                      {format(new Date(match.match_date), 'yyyy-MM-dd')} {match.match_start_time ?? 0}시 - {match.match_end_time ?? 0}시
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">{match.location}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      match.status === 'upcoming' ? 'bg-green-100 text-green-800' :
-                      match.status === 'completed' ? 'bg-gray-100 text-gray-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {match.status === 'upcoming' ? '예정' : 
-                       match.status === 'completed' ? '완료' : '취소'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => handleEdit(match)}
-                      className="text-blue-600 hover:text-blue-900 mr-4"
-                    >
-                      수정
-                    </button>
-                    <button
-                      onClick={() => handleDelete(match.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      삭제
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-4">
+          {matches.map((match) => (
+            <div key={match.id} className="bg-white rounded-lg shadow p-4">
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="text-lg font-semibold text-gray-900">{match.title}</h3>
+                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                  match.status === 'upcoming' ? 'bg-green-100 text-green-800' :
+                  match.status === 'completed' ? 'bg-gray-100 text-gray-800' :
+                  'bg-red-100 text-red-800'
+                }`}>
+                  {match.status === 'upcoming' ? '예정' :
+                   match.status === 'completed' ? '완료' : '취소'}
+                </span>
+              </div>
+              <div className="text-sm text-gray-600 space-y-1 mb-3">
+                <p>📅 {format(new Date(match.match_date), 'yyyy-MM-dd')} {match.match_start_time ?? 0}시 - {match.match_end_time ?? 0}시</p>
+                <p>📍 {match.location}</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleEdit(match)}
+                  className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm font-medium"
+                >
+                  수정
+                </button>
+                <button
+                  onClick={() => handleDelete(match.id)}
+                  className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm font-medium"
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </main>
     </div>
