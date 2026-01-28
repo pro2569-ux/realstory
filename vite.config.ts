@@ -13,7 +13,7 @@ export default defineConfig({
         name: 'FC실화 - 풋살 투표 시스템',
         short_name: 'FC실화',
         description: '풋살 팀 FC실화의 투표 및 관리 시스템',
-        theme_color: '#FFD700',
+        theme_color: '#22c55e',
         background_color: '#000000',
         display: 'standalone',
         orientation: 'portrait',

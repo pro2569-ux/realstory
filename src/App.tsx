@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { initKakao } from './lib/kakao';
+import { requestNotificationPermission } from './lib/notifications';
 import Login from './pages/Login';
 import Home from './pages/Home';
 import MatchDetail from './pages/MatchDetail';
@@ -86,6 +87,8 @@ function App() {
   useEffect(() => {
     // Kakao SDK 초기화
     initKakao();
+    // 푸시 알림 권한 요청
+    requestNotificationPermission();
   }, []);
 
   return (
