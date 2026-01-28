@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { supabase, db } from '../lib/supabase';
 import { User } from '../types';
+import { initializeMessaging, getFCMToken } from '../lib/firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -55,10 +56,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
       setUser(data);
+
+      // FCM 토큰 등록 (비동기로 처리, 실패해도 무시)
+      registerFCMToken(userId);
     } catch (error) {
       console.error('Error fetching user profile:', error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function registerFCMToken(userId: string) {
+    try {
+      await initializeMessaging();
+      const token = await getFCMToken();
+      if (token) {
+        await db.savePushToken(userId, token);
+        console.log('FCM 토큰 등록 완료');
+      }
+    } catch (error) {
+      console.log('FCM 토큰 등록 실패 (무시됨):', error);
     }
   }
 
