@@ -179,4 +179,39 @@ export const db = {
       .single();
     return { data, error };
   },
+
+  // High score operations for lifting game
+  async getHighScores() {
+    const { data, error } = await supabase
+      .from('high_scores')
+      .select(`
+        user_id,
+        score,
+        user:users(name)
+      `)
+      .order('score', { ascending: false })
+      .limit(20);
+
+    // Transform data to include user_name
+    const transformed = data?.map(item => ({
+      user_id: item.user_id,
+      score: item.score,
+      user_name: (item.user as any)?.name || '알 수 없음'
+    }));
+
+    return { data: transformed, error };
+  },
+
+  async saveHighScore(userId: string, score: number) {
+    // Upsert - update if exists, insert if not
+    const { data, error } = await supabase
+      .from('high_scores')
+      .upsert(
+        { user_id: userId, score, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id' }
+      )
+      .select()
+      .single();
+    return { data, error };
+  },
 };
