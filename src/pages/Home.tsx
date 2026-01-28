@@ -8,6 +8,7 @@ import { ko } from 'date-fns/locale';
 
 export default function Home() {
   const [matches, setMatches] = useState<Match[]>([]);
+  const [attendingCounts, setAttendingCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'list' | 'calendar'>('list');
   const { user, signOut } = useAuth();
@@ -19,9 +20,21 @@ export default function Home() {
 
   async function loadMatches() {
     try {
-      const { data, error } = await db.getMatches();
-      if (error) throw error;
-      setMatches(data || []);
+      const [matchesRes, votesRes] = await Promise.all([
+        db.getMatches(),
+        db.getAllVotes(),
+      ]);
+      if (matchesRes.error) throw matchesRes.error;
+      setMatches(matchesRes.data || []);
+
+      // 참석 인원 계산
+      const counts: Record<string, number> = {};
+      (votesRes.data || []).forEach((vote: { match_id: string; status: string }) => {
+        if (vote.status === 'attending' || vote.status === 'late') {
+          counts[vote.match_id] = (counts[vote.match_id] || 0) + 1;
+        }
+      });
+      setAttendingCounts(counts);
     } catch (error) {
       console.error('Error loading matches:', error);
     } finally {
@@ -112,7 +125,7 @@ export default function Home() {
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {upcomingMatches.map((match) => (
-                    <MatchCard key={match.id} match={match} onClick={() => navigate(`/match/${match.id}`)} />
+                    <MatchCard key={match.id} match={match} attendingCount={attendingCounts[match.id] || 0} onClick={() => navigate(`/match/${match.id}`)} />
                   ))}
                 </div>
               )}
@@ -124,7 +137,7 @@ export default function Home() {
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">지난 경기</h2>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {completedMatches.map((match) => (
-                    <MatchCard key={match.id} match={match} onClick={() => navigate(`/match/${match.id}`)} />
+                    <MatchCard key={match.id} match={match} attendingCount={attendingCounts[match.id] || 0} onClick={() => navigate(`/match/${match.id}`)} />
                   ))}
                 </div>
               </section>
@@ -138,9 +151,10 @@ export default function Home() {
   );
 }
 
-function MatchCard({ match, onClick }: { match: Match; onClick: () => void }) {
+function MatchCard({ match, attendingCount, onClick }: { match: Match; attendingCount: number; onClick: () => void }) {
   const matchDate = new Date(match.match_date);
   const isCompleted = match.status === 'completed';
+  const isVotingClosed = match.vote_deadline ? new Date(match.vote_deadline) < new Date() : false;
 
   return (
     <div
@@ -168,6 +182,14 @@ function MatchCard({ match, onClick }: { match: Match; onClick: () => void }) {
               {format(matchDate, 'yyyy년 M월 d일')} {match.match_start_time ?? 0}시 - {match.match_end_time ?? 0}시
             </span>
           </div>
+          {match.vote_deadline && (
+            <div className="flex items-center text-gray-500 ml-7">
+              <span className="text-xs">
+                투표마감 {format(new Date(match.vote_deadline), 'M/d HH:mm')}
+                {isVotingClosed && <span className="ml-1 text-red-500">(마감)</span>}
+              </span>
+            </div>
+          )}
           <div className="flex items-center text-gray-700">
             <span className="mr-2 text-lg">📍</span>
             <span className="text-xs sm:text-sm">{match.location}</span>
@@ -175,6 +197,10 @@ function MatchCard({ match, onClick }: { match: Match; onClick: () => void }) {
           <div className="flex items-center text-gray-700">
             <span className="mr-2 text-lg">👥</span>
             <span className="text-xs sm:text-sm">최소 {match.min_players}명</span>
+            <span className="ml-2 text-xs sm:text-sm font-medium text-blue-600">현재 {attendingCount}명</span>
+            {attendingCount >= match.min_players && (
+              <span className="ml-1 text-green-600 text-xs">✓</span>
+            )}
           </div>
         </div>
 

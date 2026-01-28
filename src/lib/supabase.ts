@@ -74,6 +74,13 @@ export const db = {
     return { data, error };
   },
 
+  async getAllVotes() {
+    const { data, error } = await supabase
+      .from('votes')
+      .select('match_id, status');
+    return { data, error };
+  },
+
   async createVote(vote: any) {
     const { data, error } = await supabase
       .from('votes')
