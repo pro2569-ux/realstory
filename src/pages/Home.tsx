@@ -5,14 +5,16 @@ import { db } from '../lib/supabase';
 import { Match } from '../types';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import LiftingGame from '../components/LiftingGame';
 
 export default function Home() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [attendingCounts, setAttendingCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'list' | 'calendar'>('list');
+  const [activeTab, setActiveTab] = useState<'list' | 'calendar' | 'game'>('list');
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const isMainAdmin = user?.role === 'main_admin';
 
   useEffect(() => {
     loadMatches();
@@ -104,6 +106,18 @@ export default function Home() {
           >
             📅 달력
           </button>
+          {isMainAdmin && (
+            <button
+              onClick={() => setActiveTab('game')}
+              className={`px-4 py-2 font-medium transition ${
+                activeTab === 'game'
+                  ? 'text-green-600 border-b-2 border-green-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              ⚽ 게임
+            </button>
+          )}
         </div>
       </div>
 
@@ -143,9 +157,11 @@ export default function Home() {
               </section>
             )}
           </>
-        ) : (
+        ) : activeTab === 'calendar' ? (
           <CalendarView matches={matches} onMatchClick={(id) => navigate(`/match/${id}`)} />
-        )}
+        ) : activeTab === 'game' && isMainAdmin ? (
+          <LiftingGame />
+        ) : null}
       </main>
     </div>
   );
