@@ -19,7 +19,10 @@ export async function requestNotificationPermission(): Promise<boolean> {
 }
 
 export function sendNotification(title: string, options?: NotificationOptions): void {
-  if (Notification.permission === 'granted') {
+  try {
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+
     const notification = new Notification(title, {
       icon: '/logo-192.png',
       badge: '/logo-192.png',
@@ -30,6 +33,8 @@ export function sendNotification(title: string, options?: NotificationOptions): 
       window.focus();
       notification.close();
     };
+  } catch (error) {
+    console.log('알림 발송 실패:', error);
   }
 }
 
