@@ -291,11 +291,15 @@ function MatchForm({ match, onClose }: { match: Match | null; onClose: () => voi
         return;
       }
 
-      // 새 경기 등록 시 푸시 알림 발송
+      // 새 경기 등록 시 푸시 알림 발송 (실패해도 저장은 성공)
       if (isNewMatch) {
-        const dateStr = format(new Date(formData.match_date), 'yyyy년 M월 d일');
-        const timeStr = `${formData.match_start_time}시 - ${formData.match_end_time}시`;
-        sendMatchNotification(formData.title, `${dateStr} ${timeStr}`);
+        try {
+          const dateStr = format(new Date(formData.match_date), 'yyyy년 M월 d일');
+          const timeStr = `${formData.match_start_time}시 - ${formData.match_end_time}시`;
+          sendMatchNotification(formData.title, `${dateStr} ${timeStr}`);
+        } catch (notifError) {
+          console.log('알림 발송 실패 (무시됨):', notifError);
+        }
       }
 
       onClose();
