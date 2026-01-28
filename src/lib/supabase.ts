@@ -214,4 +214,32 @@ export const db = {
       .single();
     return { data, error };
   },
+
+  // Push token operations
+  async savePushToken(userId: string, token: string) {
+    const { data, error } = await supabase
+      .from('push_tokens')
+      .upsert(
+        { user_id: userId, token, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id' }
+      )
+      .select()
+      .single();
+    return { data, error };
+  },
+
+  async getAllPushTokens() {
+    const { data, error } = await supabase
+      .from('push_tokens')
+      .select('token');
+    return { data, error };
+  },
+
+  async deletePushToken(userId: string) {
+    const { error } = await supabase
+      .from('push_tokens')
+      .delete()
+      .eq('user_id', userId);
+    return { error };
+  },
 };

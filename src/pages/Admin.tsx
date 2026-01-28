@@ -4,7 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/supabase';
 import { Match, User, UserRole } from '../types';
 import { format } from 'date-fns';
-import { sendMatchNotification } from '../lib/notifications';
 
 const ROLE_LABELS: Record<UserRole, string> = {
   main_admin: '메인관리자',
@@ -274,7 +273,6 @@ function MatchForm({ match, onClose }: { match: Match | null; onClose: () => voi
       };
 
       let result;
-      const isNewMatch = !match;
 
       if (match) {
         result = await db.updateMatch(match.id, matchData);
@@ -291,16 +289,7 @@ function MatchForm({ match, onClose }: { match: Match | null; onClose: () => voi
         return;
       }
 
-      // 새 경기 등록 시 푸시 알림 발송 (실패해도 저장은 성공)
-      if (isNewMatch) {
-        try {
-          const dateStr = format(new Date(formData.match_date), 'yyyy년 M월 d일');
-          const timeStr = `${formData.match_start_time}시 - ${formData.match_end_time}시`;
-          sendMatchNotification(formData.title, `${dateStr} ${timeStr}`);
-        } catch (notifError) {
-          console.log('알림 발송 실패 (무시됨):', notifError);
-        }
-      }
+      // TODO: 새 경기 등록 시 서버에서 FCM 푸시 발송 (Supabase Edge Function)
 
       onClose();
     } catch (error) {
