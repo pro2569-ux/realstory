@@ -209,28 +209,31 @@ export default function MatchDetail() {
           <div className="grid md:grid-cols-2 gap-4">
             <div className="flex items-center text-gray-700">
               <span className="mr-2">📅</span>
-              <span>{format(new Date(match.match_date), 'yyyy년 M월 d일')} {match.match_start_time ?? 0}시 - {match.match_end_time ?? 0}시</span>
+              <span className="font-medium">경기</span>
+              <span className="ml-2">{format(new Date(match.match_date), 'M/d')} {match.match_start_time ?? 0}시~{match.match_end_time ?? 0}시</span>
             </div>
+            {match.vote_deadline && (
+              <div className="flex items-center text-gray-700">
+                <span className="mr-2">⏰</span>
+                <span className="font-medium">투표마감</span>
+                <span className="ml-2">
+                  {format(new Date(match.vote_deadline), 'M/d HH:mm')}
+                  {isVotingClosed && <span className="ml-2 text-red-500 font-medium">(마감)</span>}
+                </span>
+              </div>
+            )}
             <div className="flex items-center text-gray-700">
               <span className="mr-2">📍</span>
               <span>{match.location}</span>
             </div>
             <div className="flex items-center text-gray-700">
               <span className="mr-2">👥</span>
-              <span>최소 {match.min_players}명 (현재 {attendingCount}명 참석)</span>
+              <span>최소 {match.min_players}명</span>
+              <span className="ml-2 font-medium text-blue-600">현재 {attendingCount}명</span>
               {attendingCount >= match.min_players && (
                 <span className="ml-2 text-green-600 font-medium">✓ 성립</span>
               )}
             </div>
-            {match.vote_deadline && (
-              <div className="flex items-center text-gray-700">
-                <span className="mr-2">⏰</span>
-                <span>
-                  투표 마감: {format(new Date(match.vote_deadline), 'M월 d일 HH:mm')}
-                  {isVotingClosed && <span className="ml-2 text-red-500 font-medium">(마감됨)</span>}
-                </span>
-              </div>
-            )}
           </div>
         </div>
 
