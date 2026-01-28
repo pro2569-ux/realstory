@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/supabase';
 import { Match, User, UserRole } from '../types';
 import { format } from 'date-fns';
+import { sendMatchNotification } from '../lib/notifications';
 
 const ROLE_LABELS: Record<UserRole, string> = {
   main_admin: '메인관리자',
@@ -273,6 +274,8 @@ function MatchForm({ match, onClose }: { match: Match | null; onClose: () => voi
       };
 
       let result;
+      const isNewMatch = !match;
+
       if (match) {
         result = await db.updateMatch(match.id, matchData);
       } else {
@@ -286,6 +289,13 @@ function MatchForm({ match, onClose }: { match: Match | null; onClose: () => voi
         console.error('Error saving match:', result.error);
         alert(`저장 중 오류가 발생했습니다: ${result.error.message}`);
         return;
+      }
+
+      // 새 경기 등록 시 푸시 알림 발송
+      if (isNewMatch) {
+        const dateStr = format(new Date(formData.match_date), 'yyyy년 M월 d일');
+        const timeStr = `${formData.match_start_time}시 - ${formData.match_end_time}시`;
+        sendMatchNotification(formData.title, `${dateStr} ${timeStr}`);
       }
 
       onClose();
