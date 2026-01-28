@@ -215,9 +215,10 @@ export default function LiftingGame() {
 
         {/* 축구공 - SVG로 더 현실적으로 */}
         <div
-          className="absolute left-1/2 w-14 h-14 transition-transform"
+          className="absolute w-12 h-12 transition-transform"
           style={{
             top: `${ballY}%`,
+            left: '55%',
             transform: `translateX(-50%) translateY(-50%) rotate(${ballRotation}deg)`,
           }}
         >
@@ -234,53 +235,64 @@ export default function LiftingGame() {
           </svg>
         </div>
 
-        {/* 캐릭터 */}
+        {/* 캐릭터 (옆모습) */}
         <div
-          className="absolute bottom-0 left-1/2 -translate-x-1/2"
-          style={{ width: '120px', height: '180px' }}
+          className="absolute bottom-0 left-8"
+          style={{ width: '100px', height: '160px' }}
         >
-          {/* 몸통 (유니폼) */}
-          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-14 h-16 bg-gradient-to-b from-red-500 to-red-600 rounded-t-lg">
-            {/* 등번호 */}
-            <div className="text-white text-center font-bold text-lg pt-2">10</div>
-          </div>
-
           {/* 머리 */}
-          <div className="absolute bottom-36 left-1/2 -translate-x-1/2 w-10 h-10 bg-amber-200 rounded-full">
+          <div className="absolute bottom-[120px] left-8 w-9 h-10 bg-amber-200 rounded-full">
             {/* 머리카락 */}
-            <div className="absolute -top-1 left-1 right-1 h-4 bg-gray-800 rounded-t-full" />
-            {/* 눈 */}
-            <div className="absolute top-4 left-2 w-1.5 h-1.5 bg-black rounded-full" />
-            <div className="absolute top-4 right-2 w-1.5 h-1.5 bg-black rounded-full" />
+            <div className="absolute -top-1 left-0 right-0 h-5 bg-gray-800 rounded-t-full" />
+            {/* 눈 (옆모습이라 하나만) */}
+            <div className="absolute top-4 right-2 w-2 h-2 bg-black rounded-full" />
+            {/* 코 */}
+            <div className="absolute top-5 -right-1 w-2 h-2 bg-amber-300 rounded-full" />
           </div>
 
-          {/* 팔 */}
-          <div className="absolute bottom-28 left-2 w-3 h-10 bg-red-500 rounded-full transform -rotate-12" />
-          <div className="absolute bottom-28 right-2 w-3 h-10 bg-red-500 rounded-full transform rotate-12" />
+          {/* 몸통 (유니폼 - 옆모습) */}
+          <div className="absolute bottom-[56px] left-6 w-10 h-16 bg-gradient-to-b from-red-500 to-red-600 rounded-lg">
+            {/* 등번호 */}
+            <div className="text-white text-center font-bold text-sm pt-1">10</div>
+          </div>
+
+          {/* 뒷팔 (고정) */}
+          <div className="absolute bottom-[95px] left-4 w-3 h-10 bg-red-700 rounded-full transform rotate-12 origin-top" />
+
+          {/* 앞팔 (균형잡는 팔) */}
+          <div
+            className={`absolute bottom-[95px] left-10 w-3 h-10 bg-red-500 rounded-full origin-top transition-transform duration-150 ${
+              isKicking ? '-rotate-45' : 'rotate-12'
+            }`}
+          />
 
           {/* 반바지 */}
-          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-12 h-8 bg-white rounded-b-lg" />
+          <div className="absolute bottom-[40px] left-7 w-8 h-6 bg-white rounded" />
 
-          {/* 왼쪽 다리 (고정) */}
-          <div className="absolute bottom-0 left-6">
-            <div className="w-4 h-12 bg-amber-200 rounded" /> {/* 다리 */}
-            <div className="absolute bottom-0 w-6 h-3 bg-black rounded" /> {/* 신발 */}
+          {/* 뒷다리 (지지하는 다리) */}
+          <div className="absolute bottom-0 left-5">
+            <div className="w-4 h-10 bg-amber-300 rounded" />
+            <div className="absolute bottom-0 -left-1 w-6 h-3 bg-black rounded" />
           </div>
 
-          {/* 오른쪽 다리 (리프팅하는 다리) */}
+          {/* 앞다리 (리프팅하는 다리) */}
           <div
-            className={`absolute right-4 origin-top transition-transform duration-150 ${
-              isKicking ? '-rotate-45' : 'rotate-0'
-            }`}
-            style={{ bottom: isKicking ? '20px' : '0px' }}
+            className={`absolute left-10 origin-top transition-all duration-150`}
+            style={{
+              bottom: isKicking ? '40px' : '0px',
+              transform: isKicking ? 'rotate(-70deg)' : 'rotate(0deg)'
+            }}
           >
-            <div className="w-4 h-12 bg-amber-200 rounded" /> {/* 다리 */}
+            <div className="w-4 h-10 bg-amber-200 rounded" />
+            {/* 발 */}
             <div
-              className={`absolute w-7 h-3 bg-black rounded transition-transform ${
-                isKicking ? 'rotate-45' : ''
-              }`}
-              style={{ bottom: 0, left: isKicking ? '-4px' : '0' }}
-            /> {/* 신발 */}
+              className="absolute w-8 h-3 bg-black rounded-lg origin-left transition-transform duration-150"
+              style={{
+                bottom: '-2px',
+                left: '0px',
+                transform: isKicking ? 'rotate(60deg)' : 'rotate(0deg)'
+              }}
+            />
           </div>
         </div>
 
