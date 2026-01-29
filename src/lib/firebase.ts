@@ -12,20 +12,34 @@ const firebaseConfig = {
 };
 
 // Firebase 초기화
-const app = initializeApp(firebaseConfig);
+let app: ReturnType<typeof initializeApp> | null = null;
 
-// FCM 메시징 인스턴스 (지원되는 경우에만)
+function getApp() {
+  if (!app) {
+    app = initializeApp(firebaseConfig);
+  }
+  return app;
+}
+
+// FCM 메시징 인스턴스
 let messaging: ReturnType<typeof getMessaging> | null = null;
 
 // FCM 초기화
 export async function initializeMessaging() {
   try {
+    // Firebase 설정이 없으면 무시
+    if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+      console.log('Firebase 설정이 없습니다.');
+      return null;
+    }
+
     const supported = await isSupported();
     if (!supported) {
       console.log('이 브라우저는 FCM을 지원하지 않습니다.');
       return null;
     }
-    messaging = getMessaging(app);
+
+    messaging = getMessaging(getApp());
     return messaging;
   } catch (error) {
     console.log('FCM 초기화 실패:', error);
@@ -47,7 +61,25 @@ export async function getFCMToken(): Promise<string | null> {
       return null;
     }
 
-    const token = await getToken(messaging, { vapidKey });
+    // 알림 권한 요청
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      console.log('알림 권한이 거부되었습니다.');
+      return null;
+    }
+
+    // Firebase Messaging Service Worker 명시적 등록
+    const swRegistration = await navigator.serviceWorker.register(
+      '/firebase-messaging-sw.js'
+    );
+    await navigator.serviceWorker.ready;
+
+    const token = await getToken(messaging, {
+      vapidKey,
+      serviceWorkerRegistration: swRegistration,
+    });
+
+    console.log('FCM 토큰:', token ? '발급 성공' : '발급 실패');
     return token;
   } catch (error) {
     console.log('FCM 토큰 가져오기 실패:', error);
@@ -64,5 +96,3 @@ export function onForegroundMessage(callback: (payload: any) => void) {
     callback(payload);
   });
 }
-
-export { app };

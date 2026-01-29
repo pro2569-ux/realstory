@@ -1,6 +1,30 @@
-import { defineConfig } from 'vite'
+import { defineConfig, Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import * as fs from 'fs'
+import * as path from 'path'
+
+// Firebase Messaging SW에 환경변수를 주입하는 플러그인
+function firebaseSwPlugin(): Plugin {
+  return {
+    name: 'firebase-sw-env',
+    writeBundle() {
+      const swPath = path.resolve('dist', 'firebase-messaging-sw.js')
+      if (fs.existsSync(swPath)) {
+        let content = fs.readFileSync(swPath, 'utf-8')
+        content = content
+          .replace('__FIREBASE_API_KEY__', process.env.VITE_FIREBASE_API_KEY || '')
+          .replace('__FIREBASE_AUTH_DOMAIN__', process.env.VITE_FIREBASE_AUTH_DOMAIN || '')
+          .replace('__FIREBASE_PROJECT_ID__', process.env.VITE_FIREBASE_PROJECT_ID || '')
+          .replace('__FIREBASE_STORAGE_BUCKET__', process.env.VITE_FIREBASE_STORAGE_BUCKET || '')
+          .replace('__FIREBASE_MESSAGING_SENDER_ID__', process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '')
+          .replace('__FIREBASE_APP_ID__', process.env.VITE_FIREBASE_APP_ID || '')
+        fs.writeFileSync(swPath, content)
+        console.log('✅ firebase-messaging-sw.js 환경변수 주입 완료')
+      }
+    }
+  }
+}
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -35,6 +59,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        navigateFallbackDenylist: [/^\/firebase-messaging-sw\.js$/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
@@ -49,6 +74,7 @@ export default defineConfig({
           }
         ]
       }
-    })
+    }),
+    firebaseSwPlugin(),
   ],
 })
