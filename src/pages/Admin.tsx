@@ -294,14 +294,20 @@ function MatchForm({ match, onClose }: { match: Match | null; onClose: () => voi
         try {
           const dateStr = format(new Date(formData.match_date), 'yyyy년 M월 d일');
           const timeStr = `${formData.match_start_time}시 - ${formData.match_end_time}시`;
-          await supabase.functions.invoke('send-push-notification', {
+          console.log('[PUSH] Edge Function 호출 시작...');
+          const { data: pushData, error: pushError } = await supabase.functions.invoke('send-push-notification', {
             body: {
               title: '새로운 경기가 등록되었습니다!',
               body: `${formData.title}\n${dateStr} ${timeStr}`,
             },
           });
-        } catch (pushError) {
-          console.log('푸시 발송 실패 (무시됨):', pushError);
+          if (pushError) {
+            console.error('[PUSH] ❌ Edge Function 에러:', pushError);
+          } else {
+            console.log('[PUSH] ✅ Edge Function 응답:', pushData);
+          }
+        } catch (pushErr) {
+          console.error('[PUSH] ❌ 호출 실패:', pushErr);
         }
       }
 
