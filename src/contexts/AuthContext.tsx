@@ -68,14 +68,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function registerFCMToken(userId: string) {
     try {
+      console.log('[FCM] 토큰 등록 시작 - userId:', userId);
       await initializeMessaging();
       const token = await getFCMToken();
       if (token) {
-        await db.savePushToken(userId, token);
-        console.log('FCM 토큰 등록 완료');
+        const { error } = await db.savePushToken(userId, token);
+        if (error) {
+          console.error('[FCM] ❌ DB 저장 실패:', error.message);
+          console.error('[FCM] 💡 push_tokens 테이블과 RLS 정책을 확인하세요.');
+        } else {
+          console.log('[FCM] ✅ 토큰 DB 저장 완료');
+        }
+      } else {
+        console.warn('[FCM] ❌ 토큰이 없어서 DB 저장 건너뜀');
       }
     } catch (error) {
-      console.log('FCM 토큰 등록 실패 (무시됨):', error);
+      console.error('[FCM] ❌ 토큰 등록 실패:', error);
     }
   }
 
