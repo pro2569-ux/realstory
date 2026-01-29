@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../lib/supabase';
+import { db, supabase } from '../lib/supabase';
 import { Match, User, UserRole } from '../types';
 import { format } from 'date-fns';
 
@@ -289,7 +289,21 @@ function MatchForm({ match, onClose }: { match: Match | null; onClose: () => voi
         return;
       }
 
-      // TODO: 새 경기 등록 시 서버에서 FCM 푸시 발송 (Supabase Edge Function)
+      // 새 경기 등록 시 FCM 푸시 발송
+      if (!match) {
+        try {
+          const dateStr = format(new Date(formData.match_date), 'yyyy년 M월 d일');
+          const timeStr = `${formData.match_start_time}시 - ${formData.match_end_time}시`;
+          await supabase.functions.invoke('send-push-notification', {
+            body: {
+              title: '새로운 경기가 등록되었습니다!',
+              body: `${formData.title}\n${dateStr} ${timeStr}`,
+            },
+          });
+        } catch (pushError) {
+          console.log('푸시 발송 실패 (무시됨):', pushError);
+        }
+      }
 
       onClose();
     } catch (error) {
