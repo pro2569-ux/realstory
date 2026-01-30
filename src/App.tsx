@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import MatchDetail from './pages/MatchDetail';
 import Admin from './pages/Admin';
 import Notifications from './pages/Notifications';
+import Settings from './pages/Settings';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -74,6 +75,14 @@ function AppRoutes() {
         element={
           <PrivateRoute>
             <Notifications />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <PrivateRoute>
+            <Settings />
           </PrivateRoute>
         }
       />
