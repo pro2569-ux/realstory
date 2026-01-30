@@ -120,3 +120,61 @@ export function onForegroundMessage(callback: (payload: any) => void) {
     callback(payload);
   });
 }
+
+// 클라이언트에서 직접 FCM 푸시 발송 (Legacy HTTP API)
+export async function sendPushToTokens(
+  tokens: string[],
+  title: string,
+  body: string
+): Promise<{ success: number; fail: number }> {
+  const serverKey = import.meta.env.VITE_FIREBASE_SERVER_KEY;
+  if (!serverKey) {
+    console.error('[PUSH] ❌ VITE_FIREBASE_SERVER_KEY가 설정되지 않았습니다.');
+    return { success: 0, fail: 0 };
+  }
+
+  if (tokens.length === 0) {
+    console.warn('[PUSH] 발송할 토큰이 없습니다.');
+    return { success: 0, fail: 0 };
+  }
+
+  let success = 0;
+  let fail = 0;
+
+  // 토큰을 1000개 단위로 나눠서 발송 (FCM 제한)
+  const chunkSize = 1000;
+  for (let i = 0; i < tokens.length; i += chunkSize) {
+    const chunk = tokens.slice(i, i + chunkSize);
+
+    try {
+      const res = await fetch('https://fcm.googleapis.com/fcm/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `key=${serverKey}`,
+        },
+        body: JSON.stringify({
+          registration_ids: chunk,
+          notification: { title, body, icon: '/icons/icon-192x192.png' },
+          data: { title, body },
+        }),
+      });
+
+      if (!res.ok) {
+        console.error('[PUSH] ❌ FCM 응답 에러:', res.status, await res.text());
+        fail += chunk.length;
+        continue;
+      }
+
+      const result = await res.json();
+      success += result.success || 0;
+      fail += result.failure || 0;
+      console.log(`[PUSH] ✅ 발송 결과: 성공 ${result.success}, 실패 ${result.failure}`);
+    } catch (err) {
+      console.error('[PUSH] ❌ 발송 오류:', err);
+      fail += chunk.length;
+    }
+  }
+
+  return { success, fail };
+}
