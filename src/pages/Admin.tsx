@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../lib/supabase';
-import { sendPushToTokens } from '../lib/firebase';
+import { db, supabase } from '../lib/supabase';
 import { Match, User, UserRole } from '../types';
 import { format } from 'date-fns';
 
@@ -295,22 +294,17 @@ function MatchForm({ match, onClose }: { match: Match | null; onClose: () => voi
         try {
           const dateStr = format(new Date(formData.match_date), 'yyyy년 M월 d일');
           const timeStr = `${formData.match_start_time}시 - ${formData.match_end_time}시`;
-          console.log('[PUSH] 푸시 발송 시작...');
-
-          // 모든 회원의 FCM 토큰 조회
-          const { data: tokenData, error: tokenError } = await db.getAllPushTokens();
-          if (tokenError) {
-            console.error('[PUSH] ❌ 토큰 조회 실패:', tokenError);
-          } else if (tokenData && tokenData.length > 0) {
-            const tokens = tokenData.map((t: { token: string }) => t.token);
-            const result = await sendPushToTokens(
-              tokens,
-              '새로운 경기가 등록되었습니다!',
-              `${formData.title}\n${dateStr} ${timeStr}`
-            );
-            console.log(`[PUSH] ✅ 발송 완료: 성공 ${result.success}, 실패 ${result.fail}`);
+          console.log('[PUSH] Edge Function 호출 시작...');
+          const { data: pushData, error: pushError } = await supabase.functions.invoke('send-push-notification', {
+            body: {
+              title: '새로운 경기가 등록되었습니다!',
+              body: `${formData.title}\n${dateStr} ${timeStr}`,
+            },
+          });
+          if (pushError) {
+            console.error('[PUSH] ❌ Edge Function 에러:', pushError);
           } else {
-            console.warn('[PUSH] 등록된 푸시 토큰이 없습니다.');
+            console.log('[PUSH] ✅ Edge Function 응답:', pushData);
           }
         } catch (pushErr) {
           console.error('[PUSH] ❌ 호출 실패:', pushErr);
