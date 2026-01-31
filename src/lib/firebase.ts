@@ -84,14 +84,31 @@ export async function getFCMToken(): Promise<string | null> {
     }
     console.log('[FCM] ✅ 알림 권한 허용됨');
 
-    // Firebase Messaging Service Worker 명시적 등록
-    console.log('[FCM] Service Worker 등록 중...');
-    const swRegistration = await navigator.serviceWorker.register(
-      '/firebase-messaging-sw.js'
-    );
-    console.log('[FCM] ✅ Service Worker 등록 완료');
+    // Service Worker 등록 및 활성화 대기
+    console.log('[FCM] Service Worker 확인 중...');
+    let swRegistration = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
 
-    await navigator.serviceWorker.ready;
+    if (!swRegistration) {
+      console.log('[FCM] Service Worker 등록 중...');
+      swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      console.log('[FCM] ✅ Service Worker 등록 완료');
+    } else {
+      console.log('[FCM] ✅ 기존 Service Worker 사용');
+    }
+
+    // Service Worker가 완전히 활성화될 때까지 대기 (최대 10초)
+    console.log('[FCM] Service Worker 활성화 대기 중...');
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Service Worker 활성화 타임아웃')), 10000)
+    );
+
+    const readyPromise = navigator.serviceWorker.ready;
+
+    await Promise.race([readyPromise, timeoutPromise]);
+    console.log('[FCM] ✅ Service Worker 활성화 완료');
+
+    // Service Worker가 활성화된 후 추가 대기 (안정화)
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     console.log('[FCM] 토큰 발급 요청 중...');
     const token = await getToken(messaging, {
