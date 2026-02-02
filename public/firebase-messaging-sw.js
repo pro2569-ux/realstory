@@ -2,14 +2,14 @@
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
-// Firebase 설정 (빌드 시 환경변수로 자동 치환됨)
+// Firebase 설정
 firebase.initializeApp({
-  apiKey: "__FIREBASE_API_KEY__",
-  authDomain: "__FIREBASE_AUTH_DOMAIN__",
-  projectId: "__FIREBASE_PROJECT_ID__",
-  storageBucket: "__FIREBASE_STORAGE_BUCKET__",
-  messagingSenderId: "__FIREBASE_MESSAGING_SENDER_ID__",
-  appId: "__FIREBASE_APP_ID__",
+  apiKey: "AIzaSyD4_FTsnvmGOJ1G1exO6lJ5fj2DQUVc6iQ",
+  authDomain: "fcrealstory-fa2f6.firebaseapp.com",
+  projectId: "fcrealstory-fa2f6",
+  storageBucket: "fcrealstory-fa2f6.firebasestorage.app",
+  messagingSenderId: "740180899539",
+  appId: "1:740180899539:web:b08be7ebcc5dd9c728c626",
 });
 
 const messaging = firebase.messaging();
