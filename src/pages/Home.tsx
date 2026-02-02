@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/supabase';
 import { Match } from '../types';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import LiftingGame from '../components/LiftingGame';
+const LiftingGame = lazy(() => import('../components/LiftingGame'));
 
 export default function Home() {
   const [matches, setMatches] = useState<Match[]>([]);
@@ -166,7 +166,7 @@ export default function Home() {
         ) : activeTab === 'calendar' ? (
           <CalendarView matches={matches} onMatchClick={(id) => navigate(`/match/${id}`)} />
         ) : activeTab === 'game' && isMainAdmin ? (
-          <LiftingGame />
+          <Suspense fallback={<div className="text-center py-12 text-gray-500">게임 로딩 중...</div>}><LiftingGame /></Suspense>
         ) : null}
       </main>
     </div>
@@ -374,7 +374,7 @@ function CalendarView({ matches, onMatchClick }: { matches: Match[]; onMatchClic
 
       {/* 버전 표시 */}
       <div className="text-right mt-4">
-        <span className="text-xs text-gray-400">v1.2.0</span>
+        <span className="text-xs text-gray-400">v1.3.0</span>
       </div>
     </div>
   );
