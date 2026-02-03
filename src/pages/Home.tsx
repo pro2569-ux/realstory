@@ -6,12 +6,13 @@ import { Match } from '../types';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths } from 'date-fns';
 import { ko } from 'date-fns/locale';
 const LiftingGame = lazy(() => import('../components/LiftingGame'));
+const FingerChooser = lazy(() => import('../components/FingerChooser'));
 
 export default function Home() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [attendingCounts, setAttendingCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'list' | 'calendar' | 'game'>('list');
+  const [activeTab, setActiveTab] = useState<'list' | 'calendar' | 'game' | 'picker'>('list');
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const isMainAdmin = user?.role === 'main_admin';
@@ -124,6 +125,16 @@ export default function Home() {
               ⚽ 게임
             </button>
           )}
+          <button
+            onClick={() => setActiveTab('picker')}
+            className={`px-4 py-2 font-medium transition ${
+              activeTab === 'picker'
+                ? 'text-green-600 border-b-2 border-green-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            👆 룰렛
+          </button>
         </div>
       </div>
 
@@ -167,6 +178,8 @@ export default function Home() {
           <CalendarView matches={matches} onMatchClick={(id) => navigate(`/match/${id}`)} />
         ) : activeTab === 'game' && isMainAdmin ? (
           <Suspense fallback={<div className="text-center py-12 text-gray-500">게임 로딩 중...</div>}><LiftingGame /></Suspense>
+        ) : activeTab === 'picker' ? (
+          <Suspense fallback={<div className="text-center py-12 text-gray-500">로딩 중...</div>}><FingerChooser /></Suspense>
         ) : null}
       </main>
     </div>
@@ -374,7 +387,7 @@ function CalendarView({ matches, onMatchClick }: { matches: Match[]; onMatchClic
 
       {/* 버전 표시 */}
       <div className="text-right mt-4">
-        <span className="text-xs text-gray-400">v1.3.1</span>
+        <span className="text-xs text-gray-400">v1.4.0</span>
       </div>
     </div>
   );
