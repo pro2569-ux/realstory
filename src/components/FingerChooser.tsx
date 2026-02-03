@@ -7,17 +7,18 @@ interface TouchPoint {
   color: string;
 }
 
+// 서로 확실히 구분되는 색상들 (색상환에서 최대한 떨어진 색)
 const COLORS = [
-  '#FF6B6B', // 빨강
-  '#4ECDC4', // 청록
-  '#FFE66D', // 노랑
-  '#95E1D3', // 민트
-  '#F38181', // 코랄
-  '#AA96DA', // 보라
-  '#FF9F43', // 주황
-  '#5C7AEA', // 파랑
-  '#2ECC71', // 초록
-  '#E056FD', // 분홍
+  '#FF0000', // 빨강
+  '#00BFFF', // 하늘색 (딥스카이블루)
+  '#FFD700', // 금색
+  '#00FF00', // 라임 (밝은 초록)
+  '#FF00FF', // 마젠타
+  '#FF8C00', // 다크오렌지
+  '#0000FF', // 파랑
+  '#00FFFF', // 시안
+  '#8B00FF', // 바이올렛
+  '#ADFF2F', // 그린옐로우
 ];
 
 type GamePhase = 'select' | 'waiting' | 'spinning' | 'result';
@@ -29,6 +30,8 @@ export default function FingerChooser() {
   const [spinAngle, setSpinAngle] = useState(0);
   const [winner, setWinner] = useState<TouchPoint | null>(null);
   const [countdown, setCountdown] = useState(3);
+  const [spreadSize, setSpreadSize] = useState(0);
+  const [showResult, setShowResult] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const spinIntervalRef = useRef<number>();
   const countdownRef = useRef<number>();
@@ -136,11 +139,36 @@ export default function FingerChooser() {
           const winnerIndex = Math.floor(Math.random() * requiredPlayers);
           setWinner(touches[winnerIndex]);
           setPhase('result');
+          setSpreadSize(0);
+          setShowResult(false);
         }
       };
       countdownRef.current = window.setTimeout(countdownTick, 1000);
     }
   }, [phase, touches.length, requiredPlayers, touches]);
+
+  // 결과 화면 퍼지는 애니메이션
+  useEffect(() => {
+    if (phase === 'result' && winner && !showResult) {
+      // 화면 대각선 길이 계산 (퍼져나갈 최대 크기)
+      const maxSize = Math.sqrt(window.innerWidth ** 2 + window.innerHeight ** 2) * 2;
+
+      let currentSize = 0;
+      const spreadSpeed = maxSize / 30; // 30프레임 동안 퍼짐
+
+      const spreadInterval = setInterval(() => {
+        currentSize += spreadSpeed;
+        setSpreadSize(currentSize);
+
+        if (currentSize >= maxSize) {
+          clearInterval(spreadInterval);
+          setShowResult(true);
+        }
+      }, 16); // ~60fps
+
+      return () => clearInterval(spreadInterval);
+    }
+  }, [phase, winner, showResult]);
 
   // 인원 미달 시 스피닝 중단
   useEffect(() => {
@@ -159,6 +187,8 @@ export default function FingerChooser() {
     setWinner(null);
     setSpinAngle(0);
     setCountdown(3);
+    setSpreadSize(0);
+    setShowResult(false);
   }
 
   // 리셋
@@ -170,6 +200,8 @@ export default function FingerChooser() {
     setWinner(null);
     setSpinAngle(0);
     setCountdown(3);
+    setSpreadSize(0);
+    setShowResult(false);
   }
 
   // 인원 선택 화면
@@ -214,23 +246,41 @@ export default function FingerChooser() {
     return (
       <div
         ref={containerRef}
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center"
-        style={{ backgroundColor: winner.color }}
-        onClick={resetGame}
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden"
+        style={{ backgroundColor: '#1a1a2e' }}
+        onClick={showResult ? resetGame : undefined}
       >
-        <div className="text-white text-center animate-bounce">
-          <div className="text-8xl mb-4">🎉</div>
-          <div className="text-4xl font-bold mb-2">당첨!</div>
-          <p className="text-xl opacity-80">화면을 터치하여 다시하기</p>
-        </div>
+        {/* 퍼져나가는 원형 애니메이션 */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            left: winner.x,
+            top: winner.y,
+            width: spreadSize,
+            height: spreadSize,
+            backgroundColor: winner.color,
+            transform: 'translate(-50%, -50%)',
+            transition: 'none',
+          }}
+        />
+
+        {/* 당첨 메시지 (애니메이션 완료 후) */}
+        {showResult && (
+          <div className="relative z-10 text-white text-center animate-bounce">
+            <div className="text-8xl mb-4">🎉</div>
+            <div className="text-4xl font-bold mb-2">당첨!</div>
+            <p className="text-xl opacity-80">화면을 터치하여 다시하기</p>
+          </div>
+        )}
 
         {/* 당첨자 위치에 표시 */}
         <div
-          className="absolute w-24 h-24 rounded-full border-4 border-white flex items-center justify-center animate-pulse"
+          className="absolute w-24 h-24 rounded-full border-4 border-white flex items-center justify-center z-20"
           style={{
             left: winner.x - 48,
             top: winner.y - 48,
             backgroundColor: 'rgba(255,255,255,0.3)',
+            animation: showResult ? 'pulse 1s infinite' : 'none',
           }}
         >
           <span className="text-4xl">👆</span>
@@ -284,7 +334,7 @@ export default function FingerChooser() {
         >
           {/* 외곽 회전 링 */}
           <div
-            className="absolute w-32 h-32 rounded-full border-8 opacity-50"
+            className="absolute w-32 h-32 rounded-full border-8 opacity-70"
             style={{
               borderColor: touch.color,
               transform: `translate(-50%, -50%) rotate(${spinAngle + index * 45}deg)`,
@@ -298,10 +348,10 @@ export default function FingerChooser() {
             className="w-20 h-20 rounded-full flex items-center justify-center shadow-lg"
             style={{
               backgroundColor: touch.color,
-              boxShadow: `0 0 30px ${touch.color}`,
+              boxShadow: `0 0 40px ${touch.color}, 0 0 60px ${touch.color}50`,
             }}
           >
-            <span className="text-white text-2xl font-bold">{index + 1}</span>
+            <span className="text-white text-2xl font-bold drop-shadow-lg">{index + 1}</span>
           </div>
           {/* 색상 이름 (스피닝 중에만 빙글빙글) */}
           {phase === 'spinning' && (
@@ -316,12 +366,13 @@ export default function FingerChooser() {
               {COLORS.slice(0, requiredPlayers).map((color, i) => (
                 <div
                   key={i}
-                  className="absolute w-4 h-4 rounded-full"
+                  className="absolute w-5 h-5 rounded-full"
                   style={{
                     backgroundColor: color,
                     left: '50%',
                     top: '50%',
                     transform: `rotate(${(360 / requiredPlayers) * i}deg) translateY(-60px) translate(-50%, -50%)`,
+                    boxShadow: `0 0 10px ${color}`,
                   }}
                 />
               ))}
