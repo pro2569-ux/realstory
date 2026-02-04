@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(supabase --version:*)",
+      "Bash(winget:*)",
+      "Bash(npm install:*)",
+      "Bash(npx supabase:*)",
+      "Bash(export SUPABASE_ACCESS_TOKEN=sbp_03cfaaec1062202a179c7ea4c218e93798c3de7e)",
+      "Bash(taskkill:*)",
+      "Bash(npm run dev)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nFCM V1 API 푸시 알림 시스템 완성\n\n- Firebase 설정 추가 \\(.env\\)\n- Service Worker 안정화 \\(활성화 대기 로직\\)\n- Supabase Edge Function 배포 \\(send-push-notification\\)\n- FCM V1 API 사용 \\(Legacy API 대체\\)\n- JWT 검증 비활성화로 클라이언트 호출 허용\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
