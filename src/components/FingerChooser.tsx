@@ -154,7 +154,7 @@ export default function FingerChooser() {
       const maxSize = Math.sqrt(window.innerWidth ** 2 + window.innerHeight ** 2) * 2;
 
       let currentSize = 0;
-      const spreadSpeed = maxSize / 30; // 30프레임 동안 퍼짐
+      const spreadSpeed = maxSize / 60; // 60프레임 동안 퍼짐 (~1초)
 
       const spreadInterval = setInterval(() => {
         currentSize += spreadSpeed;
