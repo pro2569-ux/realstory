@@ -2,7 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase, db } from '../lib/supabase';
 import { User } from '../types';
-import { initializeMessaging, getFCMToken } from '../lib/firebase';
+import { initializeMessaging, getFCMToken, onForegroundMessage } from '../lib/firebase';
+import { sendNotification } from '../lib/notifications';
 
 interface AuthContextType {
   user: User | null;
@@ -82,6 +83,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         console.warn('[FCM] ❌ 토큰이 없어서 DB 저장 건너뜀');
       }
+
+      // 포그라운드 메시지 수신 핸들러 설정
+      onForegroundMessage((payload) => {
+        console.log('[FCM] 포그라운드 메시지 수신:', payload);
+        const title = payload.notification?.title || '새로운 알림';
+        const body = payload.notification?.body || '';
+        sendNotification(title, { body, tag: 'fc-realstory-notification' });
+      });
     } catch (error) {
       console.error('[FCM] ❌ 토큰 등록 실패:', error);
     }

@@ -1,6 +1,7 @@
 // Firebase Messaging Service Worker
-importScripts('https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/11.1.0/firebase-messaging-compat.js');
+// Firebase SDK 버전은 package.json의 firebase 버전과 맞춰야 함 (현재 12.8.0)
+importScripts('https://www.gstatic.com/firebasejs/12.8.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/12.8.0/firebase-messaging-compat.js');
 
 // Firebase 설정
 firebase.initializeApp({
