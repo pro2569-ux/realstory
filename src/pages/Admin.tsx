@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { db, supabase } from '../lib/supabase';
+import { db } from '../lib/supabase';
 import { Match, User, UserRole } from '../types';
 import { format } from 'date-fns';
 
