@@ -74,12 +74,6 @@ export default function Home() {
                 알림
               </button>
               <button
-                onClick={() => navigate('/settings')}
-                className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white/20 backdrop-blur text-white rounded-lg hover:bg-white/30 transition text-sm sm:text-base"
-              >
-                설정
-              </button>
-              <button
                 onClick={signOut}
                 className="px-3 py-1.5 sm:px-4 sm:py-2 bg-red-500/80 backdrop-blur text-white rounded-lg hover:bg-red-600 transition text-sm sm:text-base"
               >
