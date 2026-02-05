@@ -12,7 +12,10 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nFCM V1 API 푸시 알림 시스템 완성\n\n- Firebase 설정 추가 \\(.env\\)\n- Service Worker 안정화 \\(활성화 대기 로직\\)\n- Supabase Edge Function 배포 \\(send-push-notification\\)\n- FCM V1 API 사용 \\(Legacy API 대체\\)\n- JWT 검증 비활성화로 클라이언트 호출 허용\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git push)",
       "Bash(git commit:*)",
-      "Bash(git restore src/contexts/AuthContext.tsx src/pages/Admin.tsx)"
+      "Bash(git restore src/contexts/AuthContext.tsx src/pages/Admin.tsx)",
+      "Bash(ls:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(if exist \"C:\\\\Project\\\\realstory\\\\src\\\\{components,pages,hooks,lib,types,contexts}\" rmdir /s /q \"C:\\\\Project\\\\realstory\\\\src\\\\{components,pages,hooks,lib,types,contexts}\")"
     ]
   }
 }
