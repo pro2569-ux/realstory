@@ -60,6 +60,8 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         navigateFallbackDenylist: [/^\/firebase-messaging-sw\.js$/],
+        // FCM Service Worker를 PWA에 통합
+        importScripts: ['/firebase-messaging-sw.js'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
