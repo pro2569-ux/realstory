@@ -151,6 +151,9 @@ Deno.serve(async (req) => {
     // FCM V1 API로 푸시 알림 발송
     const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`
 
+    // 만료된 토큰 목록 (나중에 삭제)
+    const invalidTokens: string[] = []
+
     const sendPromises = tokens.map(async ({ token }) => {
       try {
         const message = {
@@ -185,7 +188,16 @@ Deno.serve(async (req) => {
           return { success: true }
         } else {
           const errorData = await response.text()
-          console.error('[PUSH] ❌ 발송 실패:', errorData)
+          console.error('[PUSH] ❌ 발송 실패:', token.substring(0, 20) + '...', errorData)
+
+          // 만료되거나 유효하지 않은 토큰 감지 (UNREGISTERED, INVALID_ARGUMENT 등)
+          if (errorData.includes('UNREGISTERED') ||
+              errorData.includes('INVALID_ARGUMENT') ||
+              errorData.includes('not a valid FCM')) {
+            console.log('[PUSH] 🗑️ 만료된 토큰 감지:', token.substring(0, 20) + '...')
+            invalidTokens.push(token)
+          }
+
           return { success: false, error: errorData }
         }
       } catch (error) {
@@ -200,12 +212,28 @@ Deno.serve(async (req) => {
 
     console.log(`[PUSH] 완료: 성공 ${successResults}개, 실패 ${failedResults}개`)
 
+    // 만료된 토큰 DB에서 삭제
+    if (invalidTokens.length > 0) {
+      console.log(`[PUSH] 🗑️ 만료된 토큰 ${invalidTokens.length}개 삭제 중...`)
+      const { error: deleteError } = await supabase
+        .from('push_tokens')
+        .delete()
+        .in('token', invalidTokens)
+
+      if (deleteError) {
+        console.error('[PUSH] ❌ 토큰 삭제 실패:', deleteError)
+      } else {
+        console.log(`[PUSH] ✅ 만료된 토큰 ${invalidTokens.length}개 삭제 완료`)
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         sent: successResults,
         failed: failedResults,
         total: tokens.length,
+        invalidTokensRemoved: invalidTokens.length,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
