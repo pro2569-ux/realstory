@@ -2,8 +2,6 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase, db } from '../lib/supabase';
 import { User } from '../types';
-import { initializeMessaging, getFCMToken, onForegroundMessage } from '../lib/firebase';
-import { sendNotification } from '../lib/notifications';
 
 interface AuthContextType {
   user: User | null;
@@ -57,42 +55,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
       setUser(data);
-
-      // FCM 토큰 등록 (비동기로 처리, 실패해도 무시)
-      registerFCMToken(userId);
     } catch (error) {
       console.error('Error fetching user profile:', error);
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function registerFCMToken(userId: string) {
-    try {
-      console.log('[FCM] 토큰 등록 시작 - userId:', userId);
-      await initializeMessaging();
-      const token = await getFCMToken();
-      if (token) {
-        const { error } = await db.savePushToken(userId, token);
-        if (error) {
-          console.error('[FCM] ❌ DB 저장 실패:', error.message);
-          console.error('[FCM] 💡 push_tokens 테이블과 RLS 정책을 확인하세요.');
-        } else {
-          console.log('[FCM] ✅ 토큰 DB 저장 완료');
-        }
-      } else {
-        console.warn('[FCM] ❌ 토큰이 없어서 DB 저장 건너뜀');
-      }
-
-      // 포그라운드 메시지 수신 핸들러 설정
-      onForegroundMessage((payload) => {
-        console.log('[FCM] 포그라운드 메시지 수신:', payload);
-        const title = payload.notification?.title || '새로운 알림';
-        const body = payload.notification?.body || '';
-        sendNotification(title, { body, tag: 'fc-realstory-notification' });
-      });
-    } catch (error) {
-      console.error('[FCM] ❌ 토큰 등록 실패:', error);
     }
   }
 

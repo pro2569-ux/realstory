@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { initializeMessaging, getFCMToken } from '../lib/firebase';
-import { db } from '../lib/supabase';
 
 type StatusType = 'idle' | 'loading' | 'success' | 'error';
 
@@ -15,60 +13,7 @@ export default function Settings() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [notificationStatus, setNotificationStatus] = useState<ActionStatus>({ status: 'idle', message: '' });
   const [cacheStatus, setCacheStatus] = useState<ActionStatus>({ status: 'idle', message: '' });
-  const [tokenDeleteStatus, setTokenDeleteStatus] = useState<ActionStatus>({ status: 'idle', message: '' });
-  const [swStatus, setSwStatus] = useState<ActionStatus>({ status: 'idle', message: '' });
-
-  // 현재 알림 권한 상태
-  const currentPermission = typeof Notification !== 'undefined' ? Notification.permission : 'unsupported';
-
-  // 알림 재설정: 권한 재요청 + FCM 토큰 재발급 + DB 저장
-  async function handleResetNotification() {
-    setNotificationStatus({ status: 'loading', message: '알림 재설정 중...' });
-    try {
-      if (!('Notification' in window)) {
-        setNotificationStatus({ status: 'error', message: '이 브라우저는 알림을 지원하지 않습니다.' });
-        return;
-      }
-
-      const permission = Notification.permission;
-
-      if (permission === 'denied') {
-        setNotificationStatus({
-          status: 'error',
-          message: '알림이 차단된 상태입니다. 브라우저 주소창 왼쪽 자물쇠 아이콘을 눌러 알림을 허용으로 변경한 후 다시 시도하세요.',
-        });
-        return;
-      }
-
-      // 권한이 default면 요청, granted면 바로 토큰 발급
-      if (permission === 'default') {
-        const result = await Notification.requestPermission();
-        if (result !== 'granted') {
-          setNotificationStatus({ status: 'error', message: '알림 권한이 거부되었습니다.' });
-          return;
-        }
-      }
-
-      // FCM 초기화 + 토큰 발급
-      await initializeMessaging();
-      const token = await getFCMToken();
-
-      if (token && user) {
-        const { error } = await db.savePushToken(user.id, token);
-        if (error) {
-          setNotificationStatus({ status: 'error', message: `토큰 저장 실패: ${error.message}` });
-          return;
-        }
-        setNotificationStatus({ status: 'success', message: '알림이 성공적으로 재설정되었습니다!' });
-      } else if (!token) {
-        setNotificationStatus({ status: 'error', message: 'FCM 토큰 발급에 실패했습니다. 잠시 후 다시 시도하세요.' });
-      }
-    } catch (error: any) {
-      setNotificationStatus({ status: 'error', message: `오류: ${error.message || '알 수 없는 오류'}` });
-    }
-  }
 
   // 캐시 초기화: Cache Storage + 서비스워커 캐시 삭제
   async function handleClearCache() {
@@ -98,60 +43,6 @@ export default function Settings() {
     }
   }
 
-  // 서비스워커 재등록
-  async function handleResetServiceWorker() {
-    setSwStatus({ status: 'loading', message: '서비스워커 재등록 중...' });
-    try {
-      if (!('serviceWorker' in navigator)) {
-        setSwStatus({ status: 'error', message: '이 브라우저는 서비스워커를 지원하지 않습니다.' });
-        return;
-      }
-
-      // 기존 서비스워커 모두 해제
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(registrations.map(reg => reg.unregister()));
-
-      // FCM 서비스워커 재등록
-      await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-      await navigator.serviceWorker.ready;
-
-      setSwStatus({
-        status: 'success',
-        message: `기존 ${registrations.length}개 해제 후 재등록 완료!`,
-      });
-    } catch (error: any) {
-      setSwStatus({ status: 'error', message: `오류: ${error.message || '서비스워커 재등록 실패'}` });
-    }
-  }
-
-  // 푸시 토큰 삭제 (알림 받기 중단)
-  async function handleDeleteToken() {
-    setTokenDeleteStatus({ status: 'loading', message: '토큰 삭제 중...' });
-    try {
-      if (!user) {
-        setTokenDeleteStatus({ status: 'error', message: '로그인이 필요합니다.' });
-        return;
-      }
-      const { error } = await db.deletePushToken(user.id);
-      if (error) {
-        setTokenDeleteStatus({ status: 'error', message: `삭제 실패: ${error.message}` });
-        return;
-      }
-      setTokenDeleteStatus({ status: 'success', message: '푸시 토큰이 삭제되었습니다. 더 이상 알림을 받지 않습니다.' });
-    } catch (error: any) {
-      setTokenDeleteStatus({ status: 'error', message: `오류: ${error.message || '토큰 삭제 실패'}` });
-    }
-  }
-
-  const permissionLabel: Record<string, { text: string; color: string }> = {
-    granted: { text: '허용됨', color: 'text-green-600 bg-green-100' },
-    denied: { text: '차단됨', color: 'text-red-600 bg-red-100' },
-    default: { text: '미설정', color: 'text-yellow-600 bg-yellow-100' },
-    unsupported: { text: '미지원', color: 'text-gray-600 bg-gray-100' },
-  };
-
-  const perm = permissionLabel[currentPermission] || permissionLabel.unsupported;
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -173,12 +64,6 @@ export default function Settings() {
           <h2 className="text-lg font-bold text-gray-900 mb-3">현재 상태</h2>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">알림 권한</span>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${perm.color}`}>
-                {perm.text}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
               <span className="text-gray-600">사용자</span>
               <span className="text-gray-900 font-medium">{user?.name || '-'}</span>
             </div>
@@ -193,26 +78,6 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* 알림 재설정 */}
-        <SettingsCard
-          title="알림 재설정"
-          description="알림 권한을 다시 요청하고, FCM 푸시 토큰을 재발급합니다. 알림이 안 올 때 사용하세요."
-          buttonText="알림 재설정"
-          buttonColor="bg-green-500 hover:bg-green-600"
-          onClick={handleResetNotification}
-          actionStatus={notificationStatus}
-        />
-
-        {/* 푸시 알림 중단 */}
-        <SettingsCard
-          title="푸시 알림 중단"
-          description="서버에 저장된 푸시 토큰을 삭제하여 더 이상 알림을 받지 않습니다. 알림 재설정으로 다시 받을 수 있습니다."
-          buttonText="알림 중단"
-          buttonColor="bg-orange-500 hover:bg-orange-600"
-          onClick={handleDeleteToken}
-          actionStatus={tokenDeleteStatus}
-        />
-
         {/* 캐시 초기화 */}
         <SettingsCard
           title="캐시 초기화"
@@ -222,28 +87,6 @@ export default function Settings() {
           onClick={handleClearCache}
           actionStatus={cacheStatus}
         />
-
-        {/* 서비스워커 재등록 */}
-        <SettingsCard
-          title="서비스워커 재등록"
-          description="백그라운드 알림 수신을 위한 서비스워커를 재등록합니다. 푸시 알림이 백그라운드에서 안 올 때 사용하세요."
-          buttonText="서비스워커 재등록"
-          buttonColor="bg-purple-500 hover:bg-purple-600"
-          onClick={handleResetServiceWorker}
-          actionStatus={swStatus}
-        />
-
-        {/* 안내 */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800">
-          <p className="font-semibold mb-1">알림이 차단된 경우</p>
-          <p>브라우저에서 알림을 "차단"으로 설정한 경우, 사이트 내에서 직접 해제할 수 없습니다.</p>
-          <ul className="mt-2 space-y-1 list-disc list-inside text-xs">
-            <li><b>모바일 (Chrome)</b>: 주소창 좌측 자물쇠 → 권한 → 알림 → 허용</li>
-            <li><b>PC (Chrome)</b>: 주소창 좌측 자물쇠 → 사이트 설정 → 알림 → 허용</li>
-            <li><b>Safari</b>: 설정 → 웹사이트 → 알림 → 해당 사이트 허용</li>
-          </ul>
-          <p className="mt-2 text-xs">변경 후 이 페이지에서 "알림 재설정" 버튼을 눌러주세요.</p>
-        </div>
       </main>
     </div>
   );

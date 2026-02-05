@@ -289,28 +289,6 @@ function MatchForm({ match, onClose }: { match: Match | null; onClose: () => voi
         return;
       }
 
-      // 새 경기 등록 시 FCM 푸시 발송
-      if (!match) {
-        try {
-          const dateStr = format(new Date(formData.match_date), 'yyyy년 M월 d일');
-          const timeStr = `${formData.match_start_time}시 - ${formData.match_end_time}시`;
-          console.log('[PUSH] Edge Function 호출 시작...');
-          const { data: pushData, error: pushError } = await supabase.functions.invoke('send-push-notification', {
-            body: {
-              title: '새로운 경기가 등록되었습니다!',
-              body: `${formData.title}\n${dateStr} ${timeStr}`,
-            },
-          });
-          if (pushError) {
-            console.error('[PUSH] ❌ Edge Function 에러:', pushError);
-          } else {
-            console.log('[PUSH] ✅ Edge Function 응답:', pushData);
-          }
-        } catch (pushErr) {
-          console.error('[PUSH] ❌ 호출 실패:', pushErr);
-        }
-      }
-
       onClose();
     } catch (error) {
       console.error('Error saving match:', error);
