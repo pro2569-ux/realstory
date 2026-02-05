@@ -1,38 +1,10 @@
-// Firebase Messaging Service Worker
+// Firebase Messaging Service Worker (PWA와 통합)
+// 이 파일은 PWA의 sw.js에서 importScripts로 로드됨
 // Firebase SDK 버전은 package.json의 firebase 버전과 맞춰야 함 (현재 12.8.0)
 importScripts('https://www.gstatic.com/firebasejs/12.8.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/12.8.0/firebase-messaging-compat.js');
 
-// Service Worker 버전 (SDK 버전 변경 시 함께 올려서 캐시 강제 갱신)
-const SW_VERSION = '1.4.5';
-
-// Service Worker 설치 시 - 즉시 활성화
-self.addEventListener('install', (event) => {
-  console.log('[FCM SW] 설치됨 - 버전:', SW_VERSION);
-  self.skipWaiting(); // 대기 중인 SW 즉시 활성화
-});
-
-// Service Worker 활성화 시 - 기존 캐시 정리 및 클라이언트 제어
-self.addEventListener('activate', (event) => {
-  console.log('[FCM SW] 활성화됨 - 버전:', SW_VERSION);
-  event.waitUntil(
-    Promise.all([
-      // 모든 클라이언트 즉시 제어
-      self.clients.claim(),
-      // 기존 캐시 정리 (필요시)
-      caches.keys().then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cacheName) => {
-            if (cacheName.includes('firebase')) {
-              console.log('[FCM SW] 캐시 삭제:', cacheName);
-              return caches.delete(cacheName);
-            }
-          })
-        );
-      })
-    ])
-  );
-});
+console.log('[FCM] Firebase Messaging SW 로드됨 - v1.4.6');
 
 // Firebase 설정
 firebase.initializeApp({
