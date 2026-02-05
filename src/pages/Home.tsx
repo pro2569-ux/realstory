@@ -381,7 +381,7 @@ function CalendarView({ matches, onMatchClick }: { matches: Match[]; onMatchClic
 
       {/* 버전 표시 */}
       <div className="text-right mt-4">
-        <span className="text-xs text-gray-400">v1.4.6</span>
+        <span className="text-xs text-gray-400">v1.5.0</span>
       </div>
     </div>
   );
