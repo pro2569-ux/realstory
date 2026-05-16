@@ -5,11 +5,26 @@
 export default async function handler(req, res) {
   // CORS 헤더 설정
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  // GET: 헬스체크 (배포 확인용)
+  if (req.method === 'GET') {
+    const restApiKey = process.env.KAKAO_REST_API_KEY || process.env.VITE_KAKAO_REST_API_KEY;
+    return res.status(200).json({
+      status: 'ok',
+      hasRestApiKey: !!restApiKey,
+      keyPrefix: restApiKey ? restApiKey.substring(0, 4) + '...' : 'NOT SET',
+      envVars: {
+        KAKAO_REST_API_KEY: !!process.env.KAKAO_REST_API_KEY,
+        VITE_KAKAO_REST_API_KEY: !!process.env.VITE_KAKAO_REST_API_KEY,
+      },
+      timestamp: new Date().toISOString(),
+    });
   }
 
   if (req.method !== 'POST') {
