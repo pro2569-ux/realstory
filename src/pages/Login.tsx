@@ -9,7 +9,7 @@ export default function Login() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { user, signIn, signUp, signInWithKakao, handleKakaoCallback, activateDormantUser, kakaoAvailable } = useAuth();
+  const { user, signIn, signUp, signInWithKakao, activateDormantUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -22,29 +22,16 @@ export default function Login() {
     }
   }, [user, loading, from, navigate]);
 
-  // 카카오 콜백 처리 (리다이렉트 후 code 파라미터가 있을 때)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    if (code && !loading) {
-      setLoading(true);
-      setError('');
-      handleKakaoCallback().then(({ error }) => {
-        if (error) {
-          setError(error.message || '카카오 로그인 중 오류가 발생했습니다.');
-          setLoading(false);
-        }
-        // 성공 시 useEffect[user]에서 자동 리다이렉트
-      });
-    }
-  }, []);
-
-  function handleKakaoLogin() {
+  async function handleKakaoLogin() {
     setError('');
+    setLoading(true);
     try {
-      signInWithKakao(); // 카카오 로그인 페이지로 리다이렉트
+      await signInWithKakao();
+      // Supabase OAuth는 카카오 페이지로 리다이렉트됨
+      // 돌아오면 onAuthStateChange가 자동으로 세션 처리
     } catch (err: any) {
       setError(err.message || '카카오 로그인을 시작할 수 없습니다.');
+      setLoading(false);
     }
   }
 
@@ -177,33 +164,29 @@ export default function Login() {
           </button>
         </form>
 
-        {kakaoAvailable && (
-          <>
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-4 text-gray-400">또는</span>
-              </div>
-            </div>
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="bg-white px-4 text-gray-400">또는</span>
+          </div>
+        </div>
 
-            <button
-              onClick={handleKakaoLogin}
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-3 py-3 sm:py-4 rounded-xl font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md text-base sm:text-lg"
-              style={{ backgroundColor: '#FEE500', color: '#191919' }}
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M12 3C6.477 3 2 6.477 2 10.5c0 2.58 1.693 4.844 4.243 6.142-.186.695-.673 2.518-.77 2.907-.12.487.178.48.375.35.154-.103 2.454-1.667 3.446-2.344.893.131 1.813.2 2.706.2 5.523 0 10-3.477 10-7.755C22 6.477 17.523 3 12 3z"
-                  fill="#191919"
-                />
-              </svg>
-              카카오 로그인
-            </button>
-          </>
-        )}
+        <button
+          onClick={handleKakaoLogin}
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-3 py-3 sm:py-4 rounded-xl font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md text-base sm:text-lg"
+          style={{ backgroundColor: '#FEE500', color: '#191919' }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M12 3C6.477 3 2 6.477 2 10.5c0 2.58 1.693 4.844 4.243 6.142-.186.695-.673 2.518-.77 2.907-.12.487.178.48.375.35.154-.103 2.454-1.667 3.446-2.344.893.131 1.813.2 2.706.2 5.523 0 10-3.477 10-7.755C22 6.477 17.523 3 12 3z"
+              fill="#191919"
+            />
+          </svg>
+          카카오 로그인
+        </button>
       </div>
     </div>
   );
