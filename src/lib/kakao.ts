@@ -73,27 +73,32 @@ export function getKakaoCodeFromUrl(): string | null {
   return params.get('code');
 }
 
-// 카카오 인가 코드로 토큰 발급 (REST API)
+// 카카오 인가 코드로 토큰 발급 (서버사이드 API 라우트 경유)
+// 브라우저에서 직접 kauth.kakao.com 호출 시 CORS/credentials 문제 발생
+// Vercel serverless function (/api/kakao-token)을 통해 서버에서 토큰 교환
 export async function exchangeKakaoCode(code: string): Promise<{ access_token: string }> {
-  const restApiKey = import.meta.env.VITE_KAKAO_REST_API_KEY;
   const redirectUri = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, '') + '/login';
 
-  const response = await fetch('https://kauth.kakao.com/oauth/token', {
+  console.log('Kakao token exchange via server API:', {
+    endpoint: '/api/kakao-token',
+    redirect_uri: redirectUri,
+  });
+
+  const response = await fetch('/api/kakao-token', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
+      'Content-Type': 'application/json',
     },
-    body: new URLSearchParams({
-      grant_type: 'authorization_code',
-      client_id: restApiKey,
-      redirect_uri: redirectUri,
+    body: JSON.stringify({
       code: code,
+      redirect_uri: redirectUri,
     }),
   });
 
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(errorData.error_description || '카카오 토큰 발급에 실패했습니다.');
+    console.error('Kakao token exchange failed:', errorData);
+    throw new Error(errorData.error_description || errorData.error || '카카오 토큰 발급에 실패했습니다.');
   }
 
   return response.json();
