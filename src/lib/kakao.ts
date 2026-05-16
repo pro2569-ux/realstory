@@ -59,11 +59,11 @@ export function kakaoAuthorize() {
     throw new Error('카카오 SDK가 초기화되지 않았습니다.');
   }
 
-  const redirectUri = import.meta.env.VITE_APP_URL || window.location.origin;
+  const baseUrl = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, '');
 
   window.Kakao.Auth.authorize({
-    redirectUri: redirectUri + '/login',
-    scope: 'profile_nickname,account_email',
+    redirectUri: baseUrl + '/login',
+    scope: 'profile_nickname',
   });
 }
 
@@ -76,7 +76,7 @@ export function getKakaoCodeFromUrl(): string | null {
 // 카카오 인가 코드로 토큰 발급 (REST API)
 export async function exchangeKakaoCode(code: string): Promise<{ access_token: string }> {
   const restApiKey = import.meta.env.VITE_KAKAO_REST_API_KEY;
-  const redirectUri = (import.meta.env.VITE_APP_URL || window.location.origin) + '/login';
+  const redirectUri = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, '') + '/login';
 
   const response = await fetch('https://kauth.kakao.com/oauth/token', {
     method: 'POST',
