@@ -13,6 +13,7 @@ export default function Home() {
   const [attendingCounts, setAttendingCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'list' | 'calendar' | 'game' | 'picker'>('list');
+  const [matchTab, setMatchTab] = useState<'upcoming' | 'past'>('upcoming');
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const isMainAdmin = user?.role === 'main_admin';
@@ -149,31 +150,61 @@ export default function Home() {
           </div>
         ) : activeTab === 'list' ? (
           <>
-            {/* Upcoming Matches */}
-            <section className="mb-12">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">예정된 경기</h2>
-              {upcomingMatches.length === 0 ? (
-                <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-                  예정된 경기가 없습니다.
-                </div>
-              ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {upcomingMatches.map((match) => (
-                    <MatchCard key={match.id} match={match} attendingCount={attendingCounts[match.id] || 0} onClick={() => navigate(`/match/${match.id}`)} />
-                  ))}
-                </div>
-              )}
-            </section>
+            {/* Match Sub-Tabs */}
+            <div className="flex gap-2 mb-6">
+              <button
+                onClick={() => setMatchTab('upcoming')}
+                className={`px-4 py-2 font-medium rounded-lg transition ${
+                  matchTab === 'upcoming'
+                    ? 'bg-green-500 text-white shadow-md'
+                    : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                }`}
+              >
+                예정된 경기
+              </button>
+              <button
+                onClick={() => setMatchTab('past')}
+                className={`px-4 py-2 font-medium rounded-lg transition ${
+                  matchTab === 'past'
+                    ? 'bg-green-500 text-white shadow-md'
+                    : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                }`}
+              >
+                지난 경기
+              </button>
+            </div>
 
-            {/* Completed Matches */}
-            {completedMatches.length > 0 && (
+            {/* Upcoming Matches Tab */}
+            {matchTab === 'upcoming' && (
               <section>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">지난 경기</h2>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {completedMatches.map((match) => (
-                    <MatchCard key={match.id} match={match} attendingCount={attendingCounts[match.id] || 0} onClick={() => navigate(`/match/${match.id}`)} />
-                  ))}
-                </div>
+                {upcomingMatches.length === 0 ? (
+                  <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+                    예정된 경기가 없습니다.
+                  </div>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {upcomingMatches.map((match) => (
+                      <MatchCard key={match.id} match={match} attendingCount={attendingCounts[match.id] || 0} onClick={() => navigate(`/match/${match.id}`)} />
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* Past Matches Tab */}
+            {matchTab === 'past' && (
+              <section>
+                {completedMatches.length === 0 ? (
+                  <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+                    지난 경기가 없습니다.
+                  </div>
+                ) : (
+                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                    {completedMatches.map((match) => (
+                      <CompactMatchCard key={match.id} match={match} attendingCount={attendingCounts[match.id] || 0} onClick={() => navigate(`/match/${match.id}`)} />
+                    ))}
+                  </div>
+                )}
               </section>
             )}
           </>
@@ -245,6 +276,27 @@ function MatchCard({ match, attendingCount, onClick }: { match: Match; attending
         <button className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white py-3 rounded-lg hover:from-green-600 hover:to-blue-600 transition font-medium shadow-md">
           투표하기
         </button>
+      </div>
+    </div>
+  );
+}
+
+function CompactMatchCard({ match, attendingCount, onClick }: { match: Match; attendingCount: number; onClick: () => void }) {
+  const matchDate = new Date(match.match_date);
+
+  return (
+    <div
+      onClick={onClick}
+      className="bg-white rounded-lg shadow hover:shadow-md transition-all cursor-pointer overflow-hidden border border-gray-100"
+    >
+      <div className="h-1 bg-gray-300"></div>
+      <div className="p-3">
+        <h3 className="text-sm font-semibold text-gray-800 truncate">{match.title}</h3>
+        <div className="mt-1 space-y-0.5 text-xs text-gray-500">
+          <p>📅 {format(matchDate, 'M/d')} {match.match_start_time ?? 0}시-{match.match_end_time ?? 0}시</p>
+          <p>📍 {match.location}</p>
+          <p>👥 {attendingCount}명 참석</p>
+        </div>
       </div>
     </div>
   );
