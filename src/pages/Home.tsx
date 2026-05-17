@@ -47,12 +47,14 @@ export default function Home() {
 
   const now = new Date();
   const upcomingMatches = matches.filter(m => {
-    if (!m.vote_deadline) return m.status === 'upcoming';
-    return new Date(m.vote_deadline) > now;
+    const deadline = m.vote_deadline ? new Date(m.vote_deadline) : null;
+    if (!deadline) return new Date(m.match_date) > now;
+    return deadline > now;
   });
   const completedMatches = matches.filter(m => {
-    if (!m.vote_deadline) return m.status !== 'upcoming';
-    return new Date(m.vote_deadline) <= now;
+    const deadline = m.vote_deadline ? new Date(m.vote_deadline) : null;
+    if (!deadline) return new Date(m.match_date) <= now;
+    return deadline <= now;
   });
 
   return (
