@@ -175,6 +175,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       provider: 'kakao',
       options: {
         redirectTo: window.location.origin + '/login',
+        scopes: 'profile_nickname',
       },
     });
 
