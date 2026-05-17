@@ -22,14 +22,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSupabaseUser(session?.user ?? null);
-      if (session?.user) {
-        fetchOrCreateUserProfile(session.user);
-      } else {
+    // Supabase OAuth PKCE 콜백 처리: URL에 code 파라미터가 있으면
+    // exchangeCodeForSession을 통해 세션을 교환한 후 URL을 정리
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
+        if (error) {
+          console.error('OAuth code exchange failed:', error.message);
+          // URL에서 code 파라미터 제거
+          window.history.replaceState({}, '', window.location.pathname);
+          setLoading(false);
+        } else if (data.session?.user) {
+          // URL에서 code 파라미터 제거
+          window.history.replaceState({}, '', window.location.pathname);
+          setSupabaseUser(data.session.user);
+          fetchOrCreateUserProfile(data.session.user);
+        }
+      }).catch((err) => {
+        console.error('OAuth code exchange error:', err);
+        window.history.replaceState({}, '', window.location.pathname);
         setLoading(false);
-      }
-    });
+      });
+    } else {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setSupabaseUser(session?.user ?? null);
+        if (session?.user) {
+          fetchOrCreateUserProfile(session.user);
+        } else {
+          setLoading(false);
+        }
+      }).catch((err) => {
+        console.error('getSession error:', err);
+        setLoading(false);
+      });
+    }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSupabaseUser(session?.user ?? null);
