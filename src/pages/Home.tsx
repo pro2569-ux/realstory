@@ -45,8 +45,15 @@ export default function Home() {
     }
   }
 
-  const upcomingMatches = matches.filter(m => m.status === 'upcoming');
-  const completedMatches = matches.filter(m => m.status === 'completed');
+  const now = new Date();
+  const upcomingMatches = matches.filter(m => {
+    if (!m.vote_deadline) return m.status === 'upcoming';
+    return new Date(m.vote_deadline) > now;
+  });
+  const completedMatches = matches.filter(m => {
+    if (!m.vote_deadline) return m.status !== 'upcoming';
+    return new Date(m.vote_deadline) <= now;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
