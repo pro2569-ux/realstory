@@ -16,6 +16,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// role 기반으로 is_admin을 자동 동기화하는 헬퍼
+function syncAdminFlag(userData: any): any {
+  if (!userData) return userData;
+  const isAdmin = userData.role === 'main_admin' || userData.role === 'sub_admin';
+  return { ...userData, is_admin: isAdmin };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
@@ -105,17 +112,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .select('*')
               .eq('id', authUser.id)
               .single();
-            setUser(retryData);
+            setUser(syncAdminFlag(retryData));
           } else {
             console.error('Error creating user profile:', insertError);
           }
         } else {
-          setUser(newProfile);
+          setUser(syncAdminFlag(newProfile));
         }
       } else if (error) {
         console.error('Error fetching user profile:', error);
       } else {
-        setUser(data);
+        setUser(syncAdminFlag(data));
       }
     } catch (error) {
       console.error('Error in fetchOrCreateUserProfile:', error);
@@ -203,7 +210,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .single();
 
     if (data) {
-      setUser(data);
+      setUser(syncAdminFlag(data));
     }
   }
 
