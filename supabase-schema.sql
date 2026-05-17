@@ -7,6 +7,7 @@ CREATE TABLE users (
   email TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
   is_admin BOOLEAN DEFAULT false,
+  role TEXT DEFAULT 'member' CHECK (role IN ('main_admin', 'sub_admin', 'member', 'dormant')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -66,7 +67,10 @@ CREATE POLICY "Users can view all profiles" ON users
   FOR SELECT USING (true);
 
 CREATE POLICY "Users can update their own profile" ON users
-  FOR UPDATE USING (auth.uid() = id);
+  FOR UPDATE USING (
+    auth.uid() = id
+    OR EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND (is_admin = true OR role IN ('main_admin', 'sub_admin')))
+  );
 
 -- Matches 정책
 CREATE POLICY "Anyone can view matches" ON matches
@@ -74,17 +78,17 @@ CREATE POLICY "Anyone can view matches" ON matches
 
 CREATE POLICY "Admins can create matches" ON matches
   FOR INSERT WITH CHECK (
-    EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND is_admin = true)
+    EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND (is_admin = true OR role IN ('main_admin', 'sub_admin')))
   );
 
 CREATE POLICY "Admins can update matches" ON matches
   FOR UPDATE USING (
-    EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND is_admin = true)
+    EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND (is_admin = true OR role IN ('main_admin', 'sub_admin')))
   );
 
 CREATE POLICY "Admins can delete matches" ON matches
   FOR DELETE USING (
-    EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND is_admin = true)
+    EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND (is_admin = true OR role IN ('main_admin', 'sub_admin')))
   );
 
 -- Votes 정책
