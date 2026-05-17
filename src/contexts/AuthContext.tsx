@@ -176,6 +176,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       options: {
         redirectTo: window.location.origin + '/login',
         scopes: 'profile_nickname',
+        queryParams: {
+          scope: 'profile_nickname'
+        }
       },
     });
 
