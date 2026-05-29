@@ -52,11 +52,13 @@ export default function Home() {
     if (!deadline) return new Date(m.match_date) > now;
     return deadline > now;
   });
-  const completedMatches = matches.filter(m => {
-    const deadline = m.vote_deadline ? new Date(m.vote_deadline) : null;
-    if (!deadline) return new Date(m.match_date) <= now;
-    return deadline <= now;
-  });
+  const completedMatches = matches
+    .filter(m => {
+      const deadline = m.vote_deadline ? new Date(m.vote_deadline) : null;
+      if (!deadline) return new Date(m.match_date) <= now;
+      return deadline <= now;
+    })
+    .sort((a, b) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime());
 
   return (
     <div className="min-h-screen bg-gray-50">
