@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../lib/supabase';
+import { isKakaoAvailable, shareStatsToKakao } from '../lib/kakao';
 import { Match } from '../types';
 import { computeMadeWeekRate, MadeWeekRateResult } from '../lib/statsUtils';
 
@@ -150,6 +151,18 @@ export default function Statistics() {
               확정(메이드·파토)된 경기가 있는 주만 집계합니다.<br />
               한 주에 메이드가 한 번이라도 있으면 메이드 주로 분류합니다.
             </p>
+
+            {isKakaoAvailable() && (
+              <button
+                onClick={shareStatsToKakao}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#FEE500] text-[#3C1E1E] rounded-xl hover:bg-[#FDD835] active:scale-95 transition-all font-semibold shadow-sm"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 3C6.48 3 2 6.69 2 11.25c0 2.88 1.7 5.42 4.29 6.96-.19.68-.69 2.47-.79 2.85-.13.48.18.47.38.34.16-.1 2.09-1.41 2.93-1.98.71.1 1.44.16 2.19.16 5.52 0 10-3.69 10-8.25C22 6.69 17.52 3 12 3z"/>
+                </svg>
+                카카오톡으로 공유하기
+              </button>
+            )}
           </div>
         )}
       </main>

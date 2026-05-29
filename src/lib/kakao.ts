@@ -26,6 +26,49 @@ export function isKakaoAvailable(): boolean {
   return !!(window.Kakao && window.Kakao.isInitialized());
 }
 
+// 2026 메이드율 통계 공유하기
+export function shareStatsToKakao() {
+  if (!window.Kakao) {
+    alert('카카오톡 SDK가 로드되지 않았습니다. 페이지를 새로고침해주세요.');
+    return;
+  }
+  if (!window.Kakao.isInitialized()) {
+    alert('카카오톡 SDK가 초기화되지 않았습니다. JavaScript 키를 확인해주세요.');
+    return;
+  }
+
+  try {
+    const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+    const imageUrl = `${appUrl}/api/og-stats`;
+    const shareUrl = `${appUrl}/statistics`;
+
+    window.Kakao.Share.sendDefault({
+      objectType: 'feed',
+      content: {
+        title: '⚽ FC실화 2026 메이드율',
+        description: '우리 팀의 2026년 메이드 주 비율을 확인해보세요!',
+        imageUrl,
+        link: {
+          mobileWebUrl: shareUrl,
+          webUrl: shareUrl,
+        },
+      },
+      buttons: [
+        {
+          title: '통계 보러 가기',
+          link: {
+            mobileWebUrl: shareUrl,
+            webUrl: shareUrl,
+          },
+        },
+      ],
+    });
+  } catch (error) {
+    console.error('Error sharing stats to Kakao:', error);
+    alert('공유 중 오류가 발생했습니다: ' + error);
+  }
+}
+
 // 경기 공유하기
 export function shareMatchToKakao(match: {
   id: string;
