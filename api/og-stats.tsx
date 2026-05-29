@@ -45,11 +45,6 @@ export default async function handler(_req: Request) {
   const totalWeeks = madeWeeks + failedWeeks;
   const rate = totalWeeks === 0 ? 0 : madeWeeks / totalWeeks;
   const pct = Math.round(rate * 100);
-  const R = 63;
-  const circ = 2 * Math.PI * R;
-  const filled = circ * rate;
-  const gap = circ - filled;
-  const offset = circ / 4; // 12시 방향 시작
 
   return new ImageResponse(
     (
@@ -69,40 +64,32 @@ export default async function handler(_req: Request) {
           ⚽ FC실화 — 2026년 메이드 주 비율
         </span>
 
-        {/* SVG 도넛 게이지 */}
-        <svg width="160" height="160" viewBox="0 0 160 160">
-          {/* 배경 트랙 */}
-          <circle
-            cx="80" cy="80" r={R}
-            fill="none"
-            stroke="#3d1c00"
-            strokeWidth="14"
+        {/* 퍼센트 숫자 */}
+        <span style={{ fontSize: 80, fontWeight: 700, color: 'white' }}>
+          {pct}%
+        </span>
+
+        {/* 프로그레스 바 */}
+        <div
+          style={{
+            display: 'flex',
+            width: 280,
+            height: 18,
+            backgroundColor: '#3d1c00',
+            borderRadius: 9,
+            marginTop: 14,
+            marginBottom: 28,
+          }}
+        >
+          <div
+            style={{
+              width: Math.max(pct * 2.8, pct > 0 ? 18 : 0),
+              height: 18,
+              backgroundColor: '#f97316',
+              borderRadius: 9,
+            }}
           />
-          {/* 진행 호 */}
-          <circle
-            cx="80" cy="80" r={R}
-            fill="none"
-            stroke="#f97316"
-            strokeWidth="14"
-            strokeLinecap="round"
-            strokeDasharray={`${filled} ${gap}`}
-            strokeDashoffset={String(offset)}
-          />
-          {/* 중앙 텍스트 */}
-          <text
-            x="80" y="76"
-            textAnchor="middle"
-            fontSize="40"
-            fontWeight="bold"
-            fill="white"
-          >{pct}%</text>
-          <text
-            x="80" y="100"
-            textAnchor="middle"
-            fontSize="13"
-            fill="#a16207"
-          >made rate</text>
-        </svg>
+        </div>
 
         {/* 배지 3개 */}
         <div style={{ display: 'flex', marginTop: 28 }}>
