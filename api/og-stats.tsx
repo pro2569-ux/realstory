@@ -16,7 +16,7 @@ function getKSTMondayKey(dateStr: string): string {
 
 export default async function handler() {
   try {
-    // ── 한국어 서브셋 폰트 로딩 ────────────────────────────
+    // ── 한국어 서브셋 폰트 로딩 ──────────────────────────────
     let fontData: ArrayBuffer | null = null;
     try {
       const chars = 'FC실화년메이드파토주전체율';
@@ -28,7 +28,7 @@ export default async function handler() {
       if (fontUrl) fontData = await fetch(fontUrl).then(r => r.arrayBuffer());
     } catch { /* 폰트 없으면 sans-serif 폴백 */ }
 
-    // ── Supabase 데이터 조회 ────────────────────────────────
+    // ── Supabase 데이터 조회 ──────────────────────────────────
     let madeWeeks = 0;
     let failedWeeks = 0;
     try {
@@ -59,19 +59,14 @@ export default async function handler() {
     const rate = totalWeeks === 0 ? 0 : madeWeeks / totalWeeks;
     const pct = Math.round(rate * 100);
 
-    // ── SVG 도넛 파라미터 ───────────────────────────────────
-    const R = 72;
-    const SW = 14;
-    const circ = 2 * Math.PI * R;
-    const filled = circ * rate;
-    const gap = circ - filled;
-    // strokeDashoffset = circ/4 → 12시 방향 시작 (CSS transform 없이)
-    const dashOffset = circ / 4;
-
     const ff = fontData ? 'NotoSansKR' : 'sans-serif';
     const fonts = fontData
       ? [{ name: 'NotoSansKR', data: fontData, weight: 700 as const, style: 'normal' as const }]
       : [];
+
+    // conic-gradient로 도넛 차트 (SVG 미사용)
+    // pct% 만큼 초록→파랑, 나머지는 반투명 흰색
+    const donutBg = `conic-gradient(#22c55e 0% ${pct}%, rgba(255,255,255,0.12) ${pct}% 100%)`;
 
     return new ImageResponse(
       (
@@ -86,130 +81,85 @@ export default async function handler() {
             fontFamily: ff,
           }}
         >
-          {/* 글로우 원 장식 */}
-          <div style={{
-            position: 'absolute', top: -60, right: -60,
-            width: 300, height: 300,
-            borderRadius: '150px',
-            background: 'rgba(34,197,94,0.08)',
-            display: 'flex',
-          }} />
-          <div style={{
-            position: 'absolute', bottom: -80, left: -40,
-            width: 260, height: 260,
-            borderRadius: '130px',
-            background: 'rgba(59,130,246,0.08)',
-            display: 'flex',
-          }} />
+          {/* 메인 레이아웃: 도넛 + 우측 정보 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 48 }}>
 
-          {/* 메인 카드 */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 0,
-            zIndex: 1,
-          }}>
-            {/* 타이틀 */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-              <span style={{ fontSize: 18, color: 'rgba(255,255,255,0.5)', letterSpacing: 2 }}>⚽</span>
-              <span style={{ fontSize: 18, fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: 2 }}>FC실화</span>
-            </div>
-            <div style={{ display: 'flex', fontSize: 15, color: 'rgba(255,255,255,0.35)', marginBottom: 28 }}>
-              2026년 메이드율
-            </div>
-
-            {/* 도넛 차트 + 중앙 텍스트 */}
+            {/* 도넛 차트 (CSS conic-gradient) */}
             <div style={{
-              position: 'relative',
               display: 'flex',
-              width: 190,
-              height: 190,
               alignItems: 'center',
               justifyContent: 'center',
+              width: 180,
+              height: 180,
+              borderRadius: '90px',
+              background: donutBg,
             }}>
-              {/* SVG 도넛 */}
-              <svg
-                width="190"
-                height="190"
-                viewBox="0 0 190 190"
-                style={{ position: 'absolute', top: 0, left: 0 }}
-              >
-                <defs>
-                  <linearGradient id="donutGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#22c55e" />
-                    <stop offset="100%" stopColor="#3b82f6" />
-                  </linearGradient>
-                </defs>
-                {/* 배경 트랙 */}
-                <circle
-                  cx="95" cy="95" r={R}
-                  fill="none"
-                  stroke="rgba(255,255,255,0.12)"
-                  strokeWidth={SW}
-                />
-                {/* 진행 호 */}
-                <circle
-                  cx="95" cy="95" r={R}
-                  fill="none"
-                  stroke="#22c55e"
-                  strokeWidth={SW}
-                  strokeLinecap="round"
-                  strokeDasharray={`${filled} ${gap}`}
-                  strokeDashoffset={String(dashOffset)}
-                />
-              </svg>
-              {/* 중앙 텍스트 */}
+              {/* 도넛 구멍 + 중앙 텍스트 */}
               <div style={{
-                position: 'absolute',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
+                width: 124,
+                height: 124,
+                borderRadius: '62px',
+                background: '#162535',
               }}>
-                <span style={{ fontSize: 52, fontWeight: 900, color: 'white', lineHeight: '1' }}>
+                <span style={{ fontSize: 44, fontWeight: 700, color: 'white', lineHeight: '1' }}>
                   {pct}%
                 </span>
-                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>
+                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>
                   메이드율
                 </span>
               </div>
             </div>
 
-            {/* 통계 뱃지 3개 */}
-            <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
-              {/* 메이드 */}
-              <div style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                background: 'rgba(34,197,94,0.15)',
-                border: '1px solid rgba(34,197,94,0.35)',
-                borderRadius: '14px',
-                padding: '10px 20px',
-              }}>
-                <span style={{ fontSize: 26, fontWeight: 700, color: '#4ade80' }}>{madeWeeks}</span>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>메이드</span>
+            {/* 우측: 타이틀 + 배지 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              {/* 타이틀 */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <span style={{ fontSize: 22, color: 'white' }}>⚽</span>
+                <span style={{ fontSize: 22, fontWeight: 700, color: 'white' }}>FC실화</span>
               </div>
-              {/* 파토 */}
-              <div style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                background: 'rgba(239,68,68,0.15)',
-                border: '1px solid rgba(239,68,68,0.35)',
-                borderRadius: '14px',
-                padding: '10px 20px',
-              }}>
-                <span style={{ fontSize: 26, fontWeight: 700, color: '#f87171' }}>{failedWeeks}</span>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>파토</span>
-              </div>
-              {/* 전체 */}
-              <div style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                borderRadius: '14px',
-                padding: '10px 20px',
-              }}>
-                <span style={{ fontSize: 26, fontWeight: 700, color: 'rgba(255,255,255,0.8)' }}>{totalWeeks}</span>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>전체</span>
+              <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', marginBottom: 24 }}>
+                2026년 메이드 주 비율
+              </span>
+
+              {/* 배지 3개 */}
+              <div style={{ display: 'flex', gap: 10 }}>
+                {/* 메이드 */}
+                <div style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  background: 'rgba(34,197,94,0.15)',
+                  border: '1px solid rgba(34,197,94,0.4)',
+                  borderRadius: '12px',
+                  padding: '10px 18px',
+                }}>
+                  <span style={{ fontSize: 28, fontWeight: 700, color: '#4ade80' }}>{madeWeeks}</span>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>메이드</span>
+                </div>
+                {/* 파토 */}
+                <div style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  background: 'rgba(239,68,68,0.15)',
+                  border: '1px solid rgba(239,68,68,0.4)',
+                  borderRadius: '12px',
+                  padding: '10px 18px',
+                }}>
+                  <span style={{ fontSize: 28, fontWeight: 700, color: '#f87171' }}>{failedWeeks}</span>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>파토</span>
+                </div>
+                {/* 전체 */}
+                <div style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: '12px',
+                  padding: '10px 18px',
+                }}>
+                  <span style={{ fontSize: 28, fontWeight: 700, color: 'rgba(255,255,255,0.85)' }}>{totalWeeks}</span>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>전체</span>
+                </div>
               </div>
             </div>
           </div>
