@@ -40,8 +40,8 @@ export function shareStatsToKakao() {
   try {
     const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
     // 날짜를 붙여 카카오 이미지 캐시를 매일 갱신
-    const today = new Date().toISOString().slice(0, 10);
-    const imageUrl = `${appUrl}/api/og-stats?d=${today}`;
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const imageUrl = `${appUrl}/api/og-stats?d=${ts}`;
     const shareUrl = `${appUrl}/statistics`;
 
     window.Kakao.Share.sendDefault({
