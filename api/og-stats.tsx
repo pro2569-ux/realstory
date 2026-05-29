@@ -50,6 +50,7 @@ export default async function handler(_req: Request) {
       <div
         style={{
           display: 'flex',
+          flexDirection: 'column',
           width: '100%',
           height: '100%',
           backgroundColor: '#1a0e00',
@@ -57,6 +58,11 @@ export default async function handler(_req: Request) {
           justifyContent: 'center',
         }}
       >
+        {/* 타이틀 */}
+        <span style={{ fontSize: 16, fontWeight: 700, color: '#92400e', marginBottom: 20 }}>
+          ⚽ FC실화 — 2026년 메이드 주 비율
+        </span>
+
         {/* 원형 게이지 */}
         <div
           style={{
@@ -79,7 +85,7 @@ export default async function handler(_req: Request) {
               justifyContent: 'center',
             }}
           >
-            <span style={{ fontSize: 48, fontWeight: 700, color: 'white' }}>
+            <span style={{ fontSize: 52, fontWeight: 700, color: 'white' }}>
               {pct}%
             </span>
             <span style={{ fontSize: 13, color: '#a16207' }}>
@@ -88,95 +94,80 @@ export default async function handler(_req: Request) {
           </div>
         </div>
 
-        {/* 오른쪽 정보 */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            marginLeft: 48,
-          }}
-        >
-          <span style={{ fontSize: 24, fontWeight: 700, color: '#fff7ed', marginBottom: 6 }}>
-            ⚽ FC실화
-          </span>
-          <span style={{ fontSize: 14, color: '#92400e', marginBottom: 24 }}>
-            2026년 메이드 주 비율
-          </span>
+        {/* 배지 3개 */}
+        <div style={{ display: 'flex', marginTop: 28 }}>
+          {/* 메이드 */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              marginRight: 12,
+              paddingTop: 10,
+              paddingBottom: 10,
+              paddingLeft: 24,
+              paddingRight: 24,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderStyle: 'solid',
+              borderColor: '#f97316',
+            }}
+          >
+            <span style={{ fontSize: 30, fontWeight: 700, color: '#fb923c' }}>
+              {madeWeeks}
+            </span>
+            <span style={{ fontSize: 12, color: '#92400e', marginTop: 2 }}>
+              메이드
+            </span>
+          </div>
 
-          <div style={{ display: 'flex' }}>
-            {/* 메이드 */}
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                marginRight: 10,
-                paddingTop: 10,
-                paddingBottom: 10,
-                paddingLeft: 20,
-                paddingRight: 20,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderStyle: 'solid',
-                borderColor: '#f97316',
-              }}
-            >
-              <span style={{ fontSize: 28, fontWeight: 700, color: '#fb923c' }}>
-                {madeWeeks}
-              </span>
-              <span style={{ fontSize: 11, color: '#92400e', marginTop: 2 }}>
-                메이드
-              </span>
-            </div>
+          {/* 파토 */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              marginRight: 12,
+              paddingTop: 10,
+              paddingBottom: 10,
+              paddingLeft: 24,
+              paddingRight: 24,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderStyle: 'solid',
+              borderColor: '#7c2d12',
+            }}
+          >
+            <span style={{ fontSize: 30, fontWeight: 700, color: '#ea580c' }}>
+              {failedWeeks}
+            </span>
+            <span style={{ fontSize: 12, color: '#92400e', marginTop: 2 }}>
+              파토
+            </span>
+          </div>
 
-            {/* 파토 */}
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                marginRight: 10,
-                paddingTop: 10,
-                paddingBottom: 10,
-                paddingLeft: 20,
-                paddingRight: 20,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderStyle: 'solid',
-                borderColor: '#7c2d12',
-              }}
-            >
-              <span style={{ fontSize: 28, fontWeight: 700, color: '#ea580c' }}>
-                {failedWeeks}
-              </span>
-              <span style={{ fontSize: 11, color: '#92400e', marginTop: 2 }}>
-                파토
-              </span>
-            </div>
-
-            {/* 전체 */}
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                paddingTop: 10,
-                paddingBottom: 10,
-                paddingLeft: 20,
-                paddingRight: 20,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderStyle: 'solid',
-                borderColor: '#3d1c00',
-              }}
-            >
-              <span style={{ fontSize: 28, fontWeight: 700, color: '#fed7aa' }}>
-                {totalWeeks}
-              </span>
-              <span style={{ fontSize: 11, color: '#92400e', marginTop: 2 }}>
-                전체
-              </span>
-            </div>
+          {/* 전체 */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              paddingTop: 10,
+              paddingBottom: 10,
+              paddingLeft: 24,
+              paddingRight: 24,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderStyle: 'solid',
+              borderColor: '#3d1c00',
+            }}
+          >
+            <span style={{ fontSize: 30, fontWeight: 700, color: '#fed7aa' }}>
+              {totalWeeks}
+            </span>
+            <span style={{ fontSize: 12, color: '#92400e', marginTop: 2 }}>
+              전체
+            </span>
           </div>
         </div>
       </div>
