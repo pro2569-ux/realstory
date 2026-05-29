@@ -29,15 +29,17 @@ export default async function handler() {
       );
       const matches: { match_date: string; status: string }[] = await res.json();
 
+      const now = new Date();
       const weekMap = new Map<string, boolean>();
       for (const m of matches) {
-        if (
-          (m.status === 'completed' || m.status === 'cancelled') &&
-          getKSTYear(m.match_date) === 2026
-        ) {
-          const k = getKSTMondayKey(m.match_date);
-          weekMap.set(k, weekMap.get(k) === true || m.status === 'completed');
-        }
+        if (getKSTYear(m.match_date) !== 2026) continue;
+        const isCancelled = m.status === 'cancelled';
+        const isMade =
+          m.status === 'completed' ||
+          (m.status === 'upcoming' && new Date(m.match_date) <= now);
+        if (!isCancelled && !isMade) continue; // 미래 upcoming 제외
+        const k = getKSTMondayKey(m.match_date);
+        weekMap.set(k, weekMap.get(k) === true || isMade);
       }
       for (const made of weekMap.values()) {
         if (made) madeWeeks++;
