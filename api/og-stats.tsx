@@ -85,6 +85,8 @@ export default async function handler() {
   const circ = 2 * Math.PI * R;
   const filled = circ * rate;
   const gap = circ - filled;
+  // CSS transform 대신 strokeDashoffset으로 12시 방향 시작 (circ/4 = 90° 역방향 오프셋)
+  const offset = circ / 4;
 
   const fontFamily = fontData ? 'NotoSansKR' : 'sans-serif';
   const fonts = fontData
@@ -138,7 +140,7 @@ export default async function handler() {
               width="170"
               height="170"
               viewBox="0 0 170 170"
-              style={{ position: 'absolute', top: 0, left: 0, transform: 'rotate(-90deg)' }}
+              style={{ position: 'absolute', top: 0, left: 0 }}
             >
               <circle cx="85" cy="85" r={R} fill="none" stroke="#e5e7eb" strokeWidth={SW} />
               <circle
@@ -150,6 +152,7 @@ export default async function handler() {
                 strokeWidth={SW}
                 strokeLinecap="round"
                 strokeDasharray={`${filled} ${gap}`}
+                strokeDashoffset={offset}
               />
             </svg>
             <div
