@@ -135,29 +135,29 @@ export default async function handler() {
                 viewBox="0 0 190 190"
                 style={{ position: 'absolute', top: 0, left: 0 }}
               >
-                {/* 배경 트랙 */}
-                <circle
-                  cx="95" cy="95" r={R}
-                  fill="none"
-                  stroke="rgba(255,255,255,0.08)"
-                  strokeWidth={SW}
-                />
-                {/* 진행 호 */}
-                <circle
-                  cx="95" cy="95" r={R}
-                  fill="none"
-                  stroke="url(#donutGrad)"
-                  strokeWidth={SW}
-                  strokeLinecap="round"
-                  strokeDasharray={`${filled} ${gap}`}
-                  strokeDashoffset={dashOffset}
-                />
                 <defs>
                   <linearGradient id="donutGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop offset="0%" stopColor="#22c55e" />
                     <stop offset="100%" stopColor="#3b82f6" />
                   </linearGradient>
                 </defs>
+                {/* 배경 트랙 */}
+                <circle
+                  cx="95" cy="95" r={R}
+                  fill="none"
+                  stroke="rgba(255,255,255,0.12)"
+                  strokeWidth={SW}
+                />
+                {/* 진행 호 */}
+                <circle
+                  cx="95" cy="95" r={R}
+                  fill="none"
+                  stroke="#22c55e"
+                  strokeWidth={SW}
+                  strokeLinecap="round"
+                  strokeDasharray={`${filled} ${gap}`}
+                  strokeDashoffset={String(dashOffset)}
+                />
               </svg>
               {/* 중앙 텍스트 */}
               <div style={{
