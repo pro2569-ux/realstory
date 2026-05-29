@@ -4,6 +4,8 @@ import { db } from '../lib/supabase';
 import { isKakaoAvailable, shareStatsToKakao } from '../lib/kakao';
 import { Match } from '../types';
 import { computeMadeWeekRate, MadeWeekRateResult } from '../lib/statsUtils';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
 
 function DonutGauge({ rate }: { rate: number }) {
   const pct = Math.round(rate * 100);
@@ -18,20 +20,9 @@ function DonutGauge({ rate }: { rate: number }) {
   return (
     <div className="relative flex items-center justify-center w-52 h-52 mx-auto">
       <svg viewBox="0 0 200 200" className="w-full h-full -rotate-90">
-        {/* 배경 트랙 */}
+        <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#e5e7eb" strokeWidth={stroke} />
         <circle
-          cx={cx}
-          cy={cy}
-          r={radius}
-          fill="none"
-          stroke="#e5e7eb"
-          strokeWidth={stroke}
-        />
-        {/* 메이드 비율 */}
-        <circle
-          cx={cx}
-          cy={cy}
-          r={radius}
+          cx={cx} cy={cy} r={radius}
           fill="none"
           stroke="url(#madeGradient)"
           strokeWidth={stroke}
@@ -45,7 +36,6 @@ function DonutGauge({ rate }: { rate: number }) {
           </linearGradient>
         </defs>
       </svg>
-      {/* 중앙 텍스트 */}
       <div className="absolute flex flex-col items-center">
         <span className="text-4xl font-bold text-gray-800">{pct}%</span>
         <span className="text-sm text-gray-500 mt-1">메이드율</span>
@@ -54,22 +44,30 @@ function DonutGauge({ rate }: { rate: number }) {
   );
 }
 
+// 경기 결과 판정 (null = 미래/제외)
+function getMatchResult(match: Match, now: Date): 'made' | 'pato' | null {
+  if (match.status === 'cancelled') return 'pato';
+  if (match.status === 'completed') return 'made';
+  if (match.status === 'upcoming' && new Date(match.match_date) <= now) return 'made';
+  return null;
+}
+
 export default function Statistics() {
   const navigate = useNavigate();
   const [result, setResult] = useState<MadeWeekRateResult | null>(null);
+  const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadStats();
-  }, []);
+  useEffect(() => { loadStats(); }, []);
 
   async function loadStats() {
     try {
       const { data, error } = await db.getMatches();
       if (error) throw error;
-      const stats = computeMadeWeekRate((data ?? []) as Pick<Match, 'match_date' | 'status'>[]);
-      setResult(stats);
+      const all = (data ?? []) as Match[];
+      setMatches(all);
+      setResult(computeMadeWeekRate(all));
     } catch (err) {
       setError('데이터를 불러오는 중 오류가 발생했습니다.');
       console.error(err);
@@ -77,6 +75,16 @@ export default function Statistics() {
       setLoading(false);
     }
   }
+
+  const now = new Date();
+
+  // 2026년 + 과거 경기만, 날짜 내림차순
+  const pastMatches2026 = matches
+    .filter(m => {
+      const year = new Date(new Date(m.match_date).getTime() + 9 * 60 * 60 * 1000).getUTCFullYear();
+      return year === 2026 && getMatchResult(m, now) !== null;
+    })
+    .sort((a, b) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime());
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -93,8 +101,8 @@ export default function Statistics() {
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-4 pt-10 pb-16">
-        <h2 className="text-xl font-bold text-gray-800 text-center mb-8">
+      <main className="max-w-lg mx-auto px-4 pt-10 pb-16 space-y-6">
+        <h2 className="text-xl font-bold text-gray-800 text-center">
           2026년 메이드 주 비율
         </h2>
 
@@ -116,54 +124,79 @@ export default function Statistics() {
           </div>
         )}
 
-        {!loading && !error && result && result.totalWeeks === 0 && (
-          <div className="bg-white rounded-2xl shadow p-10 text-center">
-            <p className="text-5xl mb-4">⚽</p>
-            <p className="text-gray-500">2026년 확정된 경기 데이터가 없습니다.</p>
-          </div>
-        )}
-
-        {!loading && !error && result && result.totalWeeks > 0 && (
-          <div className="bg-white rounded-2xl shadow p-8 flex flex-col items-center gap-6">
-            <DonutGauge rate={result.rate} />
-
-            {/* 보조 텍스트 */}
-            <p className="text-lg font-semibold text-gray-700">
-              메이드&nbsp;
-              <span className="text-green-600">{result.madeWeeks}주</span>
-              &nbsp;/&nbsp;전체&nbsp;
-              <span className="text-gray-800">{result.totalWeeks}주</span>
-            </p>
-
-            {/* 주 분류 상세 */}
-            <div className="w-full grid grid-cols-2 gap-3">
-              <div className="bg-green-50 rounded-xl p-4 text-center">
-                <p className="text-2xl font-bold text-green-600">{result.madeWeeks}</p>
-                <p className="text-sm text-green-700 mt-1">✅ 메이드 주</p>
+        {!loading && !error && result && (
+          <>
+            {/* ── 도넛 게이지 카드 ── */}
+            {result.totalWeeks === 0 ? (
+              <div className="bg-white rounded-2xl shadow p-10 text-center">
+                <p className="text-5xl mb-4">⚽</p>
+                <p className="text-gray-500">2026년 확정된 경기 데이터가 없습니다.</p>
               </div>
-              <div className="bg-red-50 rounded-xl p-4 text-center">
-                <p className="text-2xl font-bold text-red-500">{result.failedWeeks}</p>
-                <p className="text-sm text-red-600 mt-1">❌ 파토 주</p>
+            ) : (
+              <div className="bg-white rounded-2xl shadow p-8 flex flex-col items-center gap-6">
+                <DonutGauge rate={result.rate} />
+                <p className="text-lg font-semibold text-gray-700">
+                  메이드&nbsp;<span className="text-green-600">{result.madeWeeks}주</span>
+                  &nbsp;/&nbsp;전체&nbsp;<span className="text-gray-800">{result.totalWeeks}주</span>
+                </p>
+                <div className="w-full grid grid-cols-2 gap-3">
+                  <div className="bg-green-50 rounded-xl p-4 text-center">
+                    <p className="text-2xl font-bold text-green-600">{result.madeWeeks}</p>
+                    <p className="text-sm text-green-700 mt-1">✅ 메이드 주</p>
+                  </div>
+                  <div className="bg-red-50 rounded-xl p-4 text-center">
+                    <p className="text-2xl font-bold text-red-500">{result.failedWeeks}</p>
+                    <p className="text-sm text-red-600 mt-1">❌ 파토 주</p>
+                  </div>
+                </div>
+                {isKakaoAvailable() && (
+                  <button
+                    onClick={shareStatsToKakao}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#FEE500] text-[#3C1E1E] rounded-xl hover:bg-[#FDD835] active:scale-95 transition-all font-semibold shadow-sm"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 3C6.48 3 2 6.69 2 11.25c0 2.88 1.7 5.42 4.29 6.96-.19.68-.69 2.47-.79 2.85-.13.48.18.47.38.34.16-.1 2.09-1.41 2.93-1.98.71.1 1.44.16 2.19.16 5.52 0 10-3.69 10-8.25C22 6.69 17.52 3 12 3z"/>
+                    </svg>
+                    카카오톡으로 공유하기
+                  </button>
+                )}
               </div>
-            </div>
-
-            <p className="text-xs text-gray-400 text-center leading-relaxed">
-              확정(메이드·파토)된 경기가 있는 주만 집계합니다.<br />
-              한 주에 메이드가 한 번이라도 있으면 메이드 주로 분류합니다.
-            </p>
-
-            {isKakaoAvailable() && (
-              <button
-                onClick={shareStatsToKakao}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#FEE500] text-[#3C1E1E] rounded-xl hover:bg-[#FDD835] active:scale-95 transition-all font-semibold shadow-sm"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 3C6.48 3 2 6.69 2 11.25c0 2.88 1.7 5.42 4.29 6.96-.19.68-.69 2.47-.79 2.85-.13.48.18.47.38.34.16-.1 2.09-1.41 2.93-1.98.71.1 1.44.16 2.19.16 5.52 0 10-3.69 10-8.25C22 6.69 17.52 3 12 3z"/>
-                </svg>
-                카카오톡으로 공유하기
-              </button>
             )}
-          </div>
+
+            {/* ── 경기별 상세 목록 ── */}
+            {pastMatches2026.length > 0 && (
+              <div className="bg-white rounded-2xl shadow overflow-hidden">
+                <div className="px-5 py-4 border-b border-gray-100">
+                  <h3 className="font-bold text-gray-800">경기별 결과</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">총 {pastMatches2026.length}경기</p>
+                </div>
+                <ul className="divide-y divide-gray-50">
+                  {pastMatches2026.map(m => {
+                    const result = getMatchResult(m, now);
+                    const date = new Date(m.match_date);
+                    return (
+                      <li key={m.id} className="flex items-center gap-3 px-5 py-3">
+                        {/* 결과 뱃지 */}
+                        <span className={`flex-shrink-0 w-14 text-center text-xs font-bold px-2 py-1 rounded-full ${
+                          result === 'made'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-red-100 text-red-600'
+                        }`}>
+                          {result === 'made' ? '✅ 메이드' : '❌ 파토'}
+                        </span>
+                        {/* 날짜 */}
+                        <span className="flex-shrink-0 text-sm text-gray-500 w-24">
+                          {format(date, 'M월 d일 (E)', { locale: ko })}
+                        </span>
+                        {/* 제목 */}
+                        <span className="text-sm text-gray-700 truncate">{m.title}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>
