@@ -52,7 +52,7 @@ export default async function handler(_req: Request) {
           display: 'flex',
           width: '100%',
           height: '100%',
-          backgroundColor: '#0f2027',
+          backgroundColor: '#1a0e00',
           alignItems: 'center',
           justifyContent: 'center',
         }}
@@ -68,7 +68,7 @@ export default async function handler(_req: Request) {
             borderRadius: 80,
             borderWidth: 14,
             borderStyle: 'solid',
-            borderColor: '#22c55e',
+            borderColor: '#f97316',
           }}
         >
           <div
@@ -82,7 +82,7 @@ export default async function handler(_req: Request) {
             <span style={{ fontSize: 48, fontWeight: 700, color: 'white' }}>
               {pct}%
             </span>
-            <span style={{ fontSize: 13, color: '#888888' }}>
+            <span style={{ fontSize: 13, color: '#a16207' }}>
               메이드율
             </span>
           </div>
@@ -96,10 +96,10 @@ export default async function handler(_req: Request) {
             marginLeft: 48,
           }}
         >
-          <span style={{ fontSize: 24, fontWeight: 700, color: 'white', marginBottom: 6 }}>
-            FC실화
+          <span style={{ fontSize: 24, fontWeight: 700, color: '#fff7ed', marginBottom: 6 }}>
+            ⚽ FC실화
           </span>
-          <span style={{ fontSize: 14, color: '#666666', marginBottom: 24 }}>
+          <span style={{ fontSize: 14, color: '#92400e', marginBottom: 24 }}>
             2026년 메이드 주 비율
           </span>
 
@@ -118,13 +118,13 @@ export default async function handler(_req: Request) {
                 borderRadius: 12,
                 borderWidth: 1,
                 borderStyle: 'solid',
-                borderColor: '#22c55e',
+                borderColor: '#f97316',
               }}
             >
-              <span style={{ fontSize: 28, fontWeight: 700, color: '#4ade80' }}>
+              <span style={{ fontSize: 28, fontWeight: 700, color: '#fb923c' }}>
                 {madeWeeks}
               </span>
-              <span style={{ fontSize: 11, color: '#888888', marginTop: 2 }}>
+              <span style={{ fontSize: 11, color: '#92400e', marginTop: 2 }}>
                 메이드
               </span>
             </div>
@@ -143,13 +143,13 @@ export default async function handler(_req: Request) {
                 borderRadius: 12,
                 borderWidth: 1,
                 borderStyle: 'solid',
-                borderColor: '#ef4444',
+                borderColor: '#7c2d12',
               }}
             >
-              <span style={{ fontSize: 28, fontWeight: 700, color: '#f87171' }}>
+              <span style={{ fontSize: 28, fontWeight: 700, color: '#ea580c' }}>
                 {failedWeeks}
               </span>
-              <span style={{ fontSize: 11, color: '#888888', marginTop: 2 }}>
+              <span style={{ fontSize: 11, color: '#92400e', marginTop: 2 }}>
                 파토
               </span>
             </div>
@@ -167,13 +167,13 @@ export default async function handler(_req: Request) {
                 borderRadius: 12,
                 borderWidth: 1,
                 borderStyle: 'solid',
-                borderColor: '#555555',
+                borderColor: '#3d1c00',
               }}
             >
-              <span style={{ fontSize: 28, fontWeight: 700, color: 'white' }}>
+              <span style={{ fontSize: 28, fontWeight: 700, color: '#fed7aa' }}>
                 {totalWeeks}
               </span>
-              <span style={{ fontSize: 11, color: '#888888', marginTop: 2 }}>
+              <span style={{ fontSize: 11, color: '#92400e', marginTop: 2 }}>
                 전체
               </span>
             </div>
