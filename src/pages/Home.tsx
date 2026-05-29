@@ -77,12 +77,14 @@ export default function Home() {
                   관리자
                 </button>
               )}
-              <button
-                onClick={() => navigate('/statistics')}
-                className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white/20 backdrop-blur text-white rounded-lg hover:bg-white/30 transition text-sm sm:text-base"
-              >
-                통계
-              </button>
+              {user?.is_admin && (
+                <button
+                  onClick={() => navigate('/statistics')}
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white/20 backdrop-blur text-white rounded-lg hover:bg-white/30 transition text-sm sm:text-base"
+                >
+                  통계
+                </button>
+              )}
               <button
                 onClick={() => navigate('/notifications')}
                 className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white/20 backdrop-blur text-white rounded-lg hover:bg-white/30 transition text-sm sm:text-base"

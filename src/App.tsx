@@ -23,9 +23,25 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
-    // 현재 경로를 state로 저장하여 로그인 후 돌아올 수 있도록 함
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
+
+  return <>{children}</>;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+      </div>
+    );
+  }
+
+  if (!user) return <Navigate to="/login" replace />;
+  if (!user.is_admin) return <Navigate to="/" replace />;
 
   return <>{children}</>;
 }
@@ -90,9 +106,9 @@ function AppRoutes() {
       <Route
         path="/statistics"
         element={
-          <PrivateRoute>
+          <AdminRoute>
             <Statistics />
-          </PrivateRoute>
+          </AdminRoute>
         }
       />
       <Route path="*" element={<Navigate to="/" />} />

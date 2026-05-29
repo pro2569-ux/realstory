@@ -104,7 +104,7 @@ export function shareMatchToKakao(match: {
       content: {
         title: `⚽ ${match.title}`,
         description: `📅 ${dateStr} ${timeStr}\n📍 ${match.location}\n\n${match.description}`,
-        imageUrl: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&q=80',
+        imageUrl: `${appUrl}/api/og-stats`,
         link: {
           mobileWebUrl: shareUrl,
           webUrl: shareUrl,
