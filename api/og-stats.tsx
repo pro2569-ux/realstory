@@ -14,7 +14,16 @@ function getKSTMondayKey(dateStr: string): string {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
 }
 
-export default async function handler() {
+export default async function handler(_req: Request) {
+  // 디버그: 함수 실행 확인
+  return new ImageResponse(
+    (
+      <div style={{ display: 'flex', width: '100%', height: '100%', background: '#1a3a4a', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 40 }}>
+        ALIVE
+      </div>
+    ),
+    { width: 600, height: 400 }
+  );
   try {
     // ── 한국어 서브셋 폰트 로딩 ──────────────────────────────
     let fontData: ArrayBuffer | null = null;
