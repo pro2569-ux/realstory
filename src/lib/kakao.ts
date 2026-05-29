@@ -110,7 +110,7 @@ export function shareMatchToKakao(match: {
       content: {
         title: `⚽ ${match.title}`,
         description: `📅 경기 일자: ${dateStr}\n⏰ 투표 마감: ${deadlineStr}`,
-        imageUrl: `${appUrl}/api/og-stats`,
+        imageUrl: `${appUrl}/api/og-stats?d=${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}`,
         link: {
           mobileWebUrl: shareUrl,
           webUrl: shareUrl,
