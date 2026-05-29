@@ -80,6 +80,7 @@ export function shareMatchToKakao(match: {
   match_start_time?: number;
   match_end_time?: number;
   location: string;
+  vote_deadline?: string;
 }) {
   if (!window.Kakao) {
     alert('카카오톡 SDK가 로드되지 않았습니다. 페이지를 새로고침해주세요.');
@@ -94,16 +95,21 @@ export function shareMatchToKakao(match: {
   try {
     const matchDate = new Date(match.match_date);
     const dateStr = `${matchDate.getFullYear()}년 ${matchDate.getMonth() + 1}월 ${matchDate.getDate()}일`;
-    const timeStr = `${match.match_start_time ?? 0}시 - ${match.match_end_time ?? 0}시`;
+
+    let deadlineStr = '없음';
+    if (match.vote_deadline) {
+      const dl = new Date(match.vote_deadline);
+      deadlineStr = `${dl.getMonth() + 1}월 ${dl.getDate()}일 ${dl.getHours()}시`;
+    }
 
     const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
     const shareUrl = `${appUrl}/match/${match.id}`;
 
-    const shareData = {
+    window.Kakao.Share.sendDefault({
       objectType: 'feed',
       content: {
         title: `⚽ ${match.title}`,
-        description: `📅 ${dateStr} ${timeStr}\n📍 ${match.location}\n\n${match.description}`,
+        description: `📅 ${dateStr}\n⏰ 투표 마감: ${deadlineStr}`,
         imageUrl: `${appUrl}/api/og-stats`,
         link: {
           mobileWebUrl: shareUrl,
@@ -112,16 +118,14 @@ export function shareMatchToKakao(match: {
       },
       buttons: [
         {
-          title: '투표하러 가기',
+          title: '투표하러가기!',
           link: {
             mobileWebUrl: shareUrl,
             webUrl: shareUrl,
           },
         },
       ],
-    };
-
-    window.Kakao.Share.sendDefault(shareData);
+    });
   } catch (error) {
     console.error('Error sharing to Kakao:', error);
     alert('공유 중 오류가 발생했습니다: ' + error);
