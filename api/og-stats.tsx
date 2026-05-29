@@ -64,10 +64,6 @@ export default async function handler(_req: Request) {
       ? [{ name: 'NotoSansKR', data: fontData, weight: 700 as const, style: 'normal' as const }]
       : [];
 
-    // conic-gradient로 도넛 차트 (SVG 미사용)
-    // pct% 만큼 초록→파랑, 나머지는 반투명 흰색
-    const donutBg = `conic-gradient(#22c55e 0% ${pct}%, rgba(255,255,255,0.12) ${pct}% 100%)`;
-
     return new ImageResponse(
       (
         <div
@@ -79,87 +75,75 @@ export default async function handler(_req: Request) {
             alignItems: 'center',
             justifyContent: 'center',
             fontFamily: ff,
+            gap: 48,
           }}
         >
-          {/* 메인 레이아웃: 도넛 + 우측 정보 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 48 }}>
-
-            {/* 도넛 차트 (CSS conic-gradient) */}
+          {/* 왼쪽: 원형 게이지 (border 방식) */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 180,
+            height: 180,
+            borderRadius: '90px',
+            border: '16px solid #22c55e',
+            background: 'rgba(34,197,94,0.08)',
+          }}>
             <div style={{
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              width: 180,
-              height: 180,
-              borderRadius: '90px',
-              background: donutBg,
             }}>
-              {/* 도넛 구멍 + 중앙 텍스트 */}
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 124,
-                height: 124,
-                borderRadius: '62px',
-                background: '#162535',
-              }}>
-                <span style={{ fontSize: 44, fontWeight: 700, color: 'white', lineHeight: '1' }}>
-                  {pct}%
-                </span>
-                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>
-                  메이드율
-                </span>
-              </div>
-            </div>
-
-            {/* 우측: 타이틀 + 배지 */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-              {/* 타이틀 */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <span style={{ fontSize: 22, color: 'white' }}>⚽</span>
-                <span style={{ fontSize: 22, fontWeight: 700, color: 'white' }}>FC실화</span>
-              </div>
-              <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', marginBottom: 24 }}>
-                2026년 메이드 주 비율
+              <span style={{ fontSize: 52, fontWeight: 700, color: 'white', lineHeight: '1' }}>
+                {pct}%
               </span>
+              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 6 }}>
+                메이드율
+              </span>
+            </div>
+          </div>
 
-              {/* 배지 3개 */}
-              <div style={{ display: 'flex', gap: 10 }}>
-                {/* 메이드 */}
-                <div style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  background: 'rgba(34,197,94,0.15)',
-                  border: '1px solid rgba(34,197,94,0.4)',
-                  borderRadius: '12px',
-                  padding: '10px 18px',
-                }}>
-                  <span style={{ fontSize: 28, fontWeight: 700, color: '#4ade80' }}>{madeWeeks}</span>
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>메이드</span>
-                </div>
-                {/* 파토 */}
-                <div style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  background: 'rgba(239,68,68,0.15)',
-                  border: '1px solid rgba(239,68,68,0.4)',
-                  borderRadius: '12px',
-                  padding: '10px 18px',
-                }}>
-                  <span style={{ fontSize: 28, fontWeight: 700, color: '#f87171' }}>{failedWeeks}</span>
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>파토</span>
-                </div>
-                {/* 전체 */}
-                <div style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  borderRadius: '12px',
-                  padding: '10px 18px',
-                }}>
-                  <span style={{ fontSize: 28, fontWeight: 700, color: 'rgba(255,255,255,0.85)' }}>{totalWeeks}</span>
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>전체</span>
-                </div>
+          {/* 오른쪽: 타이틀 + 배지 */}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <span style={{ fontSize: 24, color: 'white' }}>⚽</span>
+              <span style={{ fontSize: 24, fontWeight: 700, color: 'white' }}>FC실화</span>
+            </div>
+            <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', marginBottom: 24 }}>
+              2026년 메이드 주 비율
+            </span>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                background: 'rgba(34,197,94,0.15)',
+                border: '1px solid rgba(34,197,94,0.4)',
+                borderRadius: '12px',
+                padding: '10px 18px',
+              }}>
+                <span style={{ fontSize: 28, fontWeight: 700, color: '#4ade80' }}>{madeWeeks}</span>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>메이드</span>
+              </div>
+              <div style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                background: 'rgba(239,68,68,0.15)',
+                border: '1px solid rgba(239,68,68,0.4)',
+                borderRadius: '12px',
+                padding: '10px 18px',
+              }}>
+                <span style={{ fontSize: 28, fontWeight: 700, color: '#f87171' }}>{failedWeeks}</span>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>파토</span>
+              </div>
+              <div style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: '12px',
+                padding: '10px 18px',
+              }}>
+                <span style={{ fontSize: 28, fontWeight: 700, color: 'rgba(255,255,255,0.85)' }}>{totalWeeks}</span>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>전체</span>
               </div>
             </div>
           </div>
