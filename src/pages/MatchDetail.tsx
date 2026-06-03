@@ -240,7 +240,6 @@ export default function MatchDetail() {
       : match.match_start_time != null
       ? `${match.match_start_time}시~${match.match_end_time ?? match.match_start_time}시`
       : '미정';
-  const timeLabel = confirmedSlot ? `${formatSlot(confirmedSlot.start_hour)} 확정` : candidateText;
   const shareTimeText = confirmedSlot ? formatSlot(confirmedSlot.start_hour) : candidateText;
 
   return (
@@ -278,9 +277,7 @@ export default function MatchDetail() {
             <div className="flex items-center text-gray-700">
               <span className="mr-2">📅</span>
               <span className="font-medium">경기</span>
-              <span className="ml-2">
-                {format(new Date(match.match_date), 'M/d')} {timeLabel}
-              </span>
+              <span className="ml-2">{format(new Date(match.match_date), 'M/d')}</span>
             </div>
             {match.vote_deadline && (
               <div className="flex items-center text-gray-700">

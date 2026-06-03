@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/supabase';
 import { Match, MatchTimeSlot, VoteTimeSlot, VoteStatus } from '../types';
-import { computeMatchSlotStats, matchTimeLabel } from '../lib/slotUtils';
+import { computeMatchSlotStats } from '../lib/slotUtils';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths } from 'date-fns';
 import { ko } from 'date-fns/locale';
 const LiftingGame = lazy(() => import('../components/LiftingGame'));
@@ -12,7 +12,6 @@ const FingerChooser = lazy(() => import('../components/FingerChooser'));
 export default function Home() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [matchStats, setMatchStats] = useState<Record<string, { count: number; made: boolean }>>({});
-  const [slotsByMatch, setSlotsByMatch] = useState<Record<string, MatchTimeSlot[]>>({});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'list' | 'calendar' | 'game' | 'picker'>('list');
   const [matchTab, setMatchTab] = useState<'upcoming' | 'past'>('upcoming');
@@ -40,11 +39,9 @@ export default function Home() {
       const allSlots = (slotsRes.data || []) as MatchTimeSlot[];
       const allVoteSlots = (voteSlotsRes.data || []) as VoteTimeSlot[];
 
-      // 경기별 슬롯 그룹
+      // 경기별 슬롯 그룹 (성립 판정용)
       const slotsMap: Record<string, MatchTimeSlot[]> = {};
       allSlots.forEach((s) => (slotsMap[s.match_id] ||= []).push(s));
-      Object.values(slotsMap).forEach((arr) => arr.sort((a, b) => a.start_hour - b.start_hour));
-      setSlotsByMatch(slotsMap);
 
       // 경기별 투표 / 투표-슬롯 그룹
       const slotIdToMatch = new Map(allSlots.map((s) => [s.id, s.match_id]));
@@ -223,7 +220,7 @@ export default function Home() {
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {upcomingMatches.map((match) => (
-                      <MatchCard key={match.id} match={match} stat={matchStats[match.id]} slots={slotsByMatch[match.id] || []} onClick={() => navigate(`/match/${match.id}`)} />
+                      <MatchCard key={match.id} match={match} stat={matchStats[match.id]} onClick={() => navigate(`/match/${match.id}`)} />
                     ))}
                   </div>
                 )}
@@ -240,7 +237,7 @@ export default function Home() {
                 ) : (
                   <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
                     {completedMatches.map((match) => (
-                      <CompactMatchCard key={match.id} match={match} stat={matchStats[match.id]} slots={slotsByMatch[match.id] || []} onClick={() => navigate(`/match/${match.id}`)} />
+                      <CompactMatchCard key={match.id} match={match} stat={matchStats[match.id]} onClick={() => navigate(`/match/${match.id}`)} />
                     ))}
                   </div>
                 )}
@@ -259,7 +256,7 @@ export default function Home() {
   );
 }
 
-function MatchCard({ match, stat, slots, onClick }: { match: Match; stat?: { count: number; made: boolean }; slots: MatchTimeSlot[]; onClick: () => void }) {
+function MatchCard({ match, stat, onClick }: { match: Match; stat?: { count: number; made: boolean }; onClick: () => void }) {
   const matchDate = new Date(match.match_date);
   const isCompleted = match.status === 'completed';
   const isVotingClosed = match.vote_deadline ? new Date(match.vote_deadline) < new Date() : false;
@@ -289,7 +286,7 @@ function MatchCard({ match, stat, slots, onClick }: { match: Match; stat?: { cou
           <div className="flex items-center text-gray-700">
             <span className="mr-2 text-lg">📅</span>
             <span className="text-xs sm:text-sm">
-              {format(matchDate, 'yyyy년 M월 d일')} {matchTimeLabel(match, slots)}
+              {format(matchDate, 'yyyy년 M월 d일')}
             </span>
           </div>
           {match.vote_deadline && (
@@ -322,7 +319,7 @@ function MatchCard({ match, stat, slots, onClick }: { match: Match; stat?: { cou
   );
 }
 
-function CompactMatchCard({ match, stat, slots, onClick }: { match: Match; stat?: { count: number; made: boolean }; slots: MatchTimeSlot[]; onClick: () => void }) {
+function CompactMatchCard({ match, stat, onClick }: { match: Match; stat?: { count: number; made: boolean }; onClick: () => void }) {
   const matchDate = new Date(match.match_date);
   const count = stat?.count ?? 0;
 
@@ -335,7 +332,7 @@ function CompactMatchCard({ match, stat, slots, onClick }: { match: Match; stat?
       <div className="p-3">
         <h3 className="text-sm font-semibold text-gray-800 truncate">{match.title}</h3>
         <div className="mt-1 space-y-0.5 text-xs text-gray-500">
-          <p>📅 {format(matchDate, 'M/d')} {matchTimeLabel(match, slots)}</p>
+          <p>📅 {format(matchDate, 'M/d')}</p>
           <p>📍 {match.location}</p>
           <p>👥 최다 {count}명</p>
         </div>
