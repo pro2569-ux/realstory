@@ -453,31 +453,19 @@ export default function MatchDetail() {
           </div>
 
           <div className="space-y-2">
-            {votes.map((vote) => {
-              const picks = voteSlots
-                .filter((vs) => vs.vote_id === vote.id)
-                .map((vs) => slots.find((s) => s.id === vs.slot_id))
-                .filter((s): s is MatchTimeSlot => !!s)
-                .sort((a, b) => a.start_hour - b.start_hour);
-              return (
-                <div key={vote.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">
-                      {VOTE_OPTIONS.find((o) => o.value === vote.status)?.emoji}
-                    </span>
-                    <div>
-                      <div className="font-medium text-gray-900">{vote.user?.name}</div>
-                      {picks.length > 0 && (
-                        <div className="text-xs text-green-700">
-                          {picks.map((s) => formatSlot(s.start_hour)).join(', ')}
-                        </div>
-                      )}
-                      {vote.note && <div className="text-sm text-gray-600">{vote.note}</div>}
-                    </div>
+            {votes.map((vote) => (
+              <div key={vote.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">
+                    {VOTE_OPTIONS.find((o) => o.value === vote.status)?.emoji}
+                  </span>
+                  <div>
+                    <div className="font-medium text-gray-900">{vote.user?.name}</div>
+                    {vote.note && <div className="text-sm text-gray-600">{vote.note}</div>}
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </div>
 
