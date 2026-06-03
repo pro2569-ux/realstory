@@ -25,7 +25,6 @@ export default function Admin() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'matches' | 'users'>('matches');
   const [matches, setMatches] = useState<Match[]>([]);
-  const [matchSlots, setMatchSlots] = useState<Record<string, number[]>>({});
   const [users, setUsers] = useState<User[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
@@ -44,14 +43,6 @@ export default function Admin() {
   async function loadMatches() {
     const { data } = await db.getMatches();
     setMatches(data || []);
-
-    const { data: slots } = await db.getAllMatchSlots();
-    const map: Record<string, number[]> = {};
-    (slots || []).forEach((s: { match_id: string; start_hour: number }) => {
-      (map[s.match_id] ||= []).push(s.start_hour);
-    });
-    Object.values(map).forEach((arr) => arr.sort((a, b) => a - b));
-    setMatchSlots(map);
   }
 
   async function loadUsers() {
@@ -180,12 +171,7 @@ export default function Admin() {
                     </span>
                   </div>
                   <div className="text-sm text-gray-600 space-y-1 mb-3">
-                    <p>
-                      📅 {format(new Date(match.match_date), 'yyyy-MM-dd')}{' '}
-                      {matchSlots[match.id]?.length
-                        ? matchSlots[match.id].map((h) => `${h}시`).join(', ')
-                        : `${match.match_start_time ?? 0}시 - ${match.match_end_time ?? 0}시`}
-                    </p>
+                    <p>📅 {format(new Date(match.match_date), 'yyyy-MM-dd')}</p>
                     <p>📍 {match.location}</p>
                   </div>
                   <div className="flex gap-2">
