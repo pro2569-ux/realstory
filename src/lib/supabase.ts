@@ -110,6 +110,102 @@ export const db = {
     return { data, error };
   },
 
+  // 전체 투표 (홈 슬롯 집계용: id/match_id/user_id/status)
+  async getAllVotesDetailed() {
+    const { data, error } = await supabase
+      .from('votes')
+      .select('id, match_id, user_id, status');
+    return { data, error };
+  },
+
+  // Time slot operations (match_time_slots)
+  async getMatchSlots(matchId: string) {
+    const { data, error } = await supabase
+      .from('match_time_slots')
+      .select('*')
+      .eq('match_id', matchId)
+      .order('start_hour', { ascending: true });
+    return { data, error };
+  },
+
+  async getAllMatchSlots() {
+    const { data, error } = await supabase
+      .from('match_time_slots')
+      .select('id, match_id, start_hour');
+    return { data, error };
+  },
+
+  // 관리자: 경기의 후보 슬롯을 desired 시각 목록으로 동기화(diff).
+  // 변경 없는 시각은 그대로 두어 회원들의 슬롯 선택을 보존한다.
+  async saveMatchSlots(matchId: string, hours: number[]) {
+    const { data: existing } = await supabase
+      .from('match_time_slots')
+      .select('id, start_hour')
+      .eq('match_id', matchId);
+
+    const existingHours = new Set((existing ?? []).map((s) => s.start_hour));
+    const desired = new Set(hours);
+
+    const toAdd = hours.filter((h) => !existingHours.has(h));
+    const toRemoveIds = (existing ?? [])
+      .filter((s) => !desired.has(s.start_hour))
+      .map((s) => s.id);
+
+    if (toRemoveIds.length) {
+      await supabase.from('match_time_slots').delete().in('id', toRemoveIds);
+    }
+    if (toAdd.length) {
+      const { error } = await supabase
+        .from('match_time_slots')
+        .insert(toAdd.map((h) => ({ match_id: matchId, start_hour: h })));
+      if (error) return { error };
+    }
+    return { error: null };
+  },
+
+  // Vote slot operations (vote_time_slots)
+  async getVoteSlots(voteId: string) {
+    const { data, error } = await supabase
+      .from('vote_time_slots')
+      .select('slot_id')
+      .eq('vote_id', voteId);
+    return { data, error };
+  },
+
+  // 경기의 모든 투표-슬롯 (슬롯 id 경유)
+  async getVoteSlotsForMatch(matchId: string) {
+    const { data: slots } = await supabase
+      .from('match_time_slots')
+      .select('id')
+      .eq('match_id', matchId);
+    const ids = (slots ?? []).map((s) => s.id);
+    if (!ids.length) return { data: [], error: null };
+    const { data, error } = await supabase
+      .from('vote_time_slots')
+      .select('vote_id, slot_id')
+      .in('slot_id', ids);
+    return { data, error };
+  },
+
+  async getAllVoteSlots() {
+    const { data, error } = await supabase
+      .from('vote_time_slots')
+      .select('vote_id, slot_id');
+    return { data, error };
+  },
+
+  // 한 투표의 선택 슬롯을 교체 (참석/늦게도착=slotIds, 불참/미정=[])
+  async replaceVoteSlots(voteId: string, slotIds: string[]) {
+    await supabase.from('vote_time_slots').delete().eq('vote_id', voteId);
+    if (slotIds.length) {
+      const { error } = await supabase
+        .from('vote_time_slots')
+        .insert(slotIds.map((slot_id) => ({ vote_id: voteId, slot_id })));
+      return { error };
+    }
+    return { error: null };
+  },
+
   // Comment operations
   async getComments(matchId: string) {
     const { data, error } = await supabase

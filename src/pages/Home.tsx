@@ -2,7 +2,8 @@ import { useEffect, useState, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/supabase';
-import { Match } from '../types';
+import { Match, MatchTimeSlot, VoteTimeSlot, VoteStatus } from '../types';
+import { computeMatchSlotStats, matchTimeLabel } from '../lib/slotUtils';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths } from 'date-fns';
 import { ko } from 'date-fns/locale';
 const LiftingGame = lazy(() => import('../components/LiftingGame'));
@@ -10,7 +11,8 @@ const FingerChooser = lazy(() => import('../components/FingerChooser'));
 
 export default function Home() {
   const [matches, setMatches] = useState<Match[]>([]);
-  const [attendingCounts, setAttendingCounts] = useState<Record<string, number>>({});
+  const [matchStats, setMatchStats] = useState<Record<string, { count: number; made: boolean }>>({});
+  const [slotsByMatch, setSlotsByMatch] = useState<Record<string, MatchTimeSlot[]>>({});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'list' | 'calendar' | 'game' | 'picker'>('list');
   const [matchTab, setMatchTab] = useState<'upcoming' | 'past'>('upcoming');
@@ -24,21 +26,48 @@ export default function Home() {
 
   async function loadMatches() {
     try {
-      const [matchesRes, votesRes] = await Promise.all([
+      const [matchesRes, votesRes, slotsRes, voteSlotsRes] = await Promise.all([
         db.getMatches(),
-        db.getAllVotes(),
+        db.getAllVotesDetailed(),
+        db.getAllMatchSlots(),
+        db.getAllVoteSlots(),
       ]);
       if (matchesRes.error) throw matchesRes.error;
-      setMatches(matchesRes.data || []);
+      const matchesData = (matchesRes.data || []) as Match[];
+      setMatches(matchesData);
 
-      // 참석 인원 계산
-      const counts: Record<string, number> = {};
-      (votesRes.data || []).forEach((vote: { match_id: string; status: string }) => {
-        if (vote.status === 'attending' || vote.status === 'late') {
-          counts[vote.match_id] = (counts[vote.match_id] || 0) + 1;
-        }
+      const allVotes = (votesRes.data || []) as { id: string; match_id: string; status: VoteStatus }[];
+      const allSlots = (slotsRes.data || []) as MatchTimeSlot[];
+      const allVoteSlots = (voteSlotsRes.data || []) as VoteTimeSlot[];
+
+      // 경기별 슬롯 그룹
+      const slotsMap: Record<string, MatchTimeSlot[]> = {};
+      allSlots.forEach((s) => (slotsMap[s.match_id] ||= []).push(s));
+      Object.values(slotsMap).forEach((arr) => arr.sort((a, b) => a.start_hour - b.start_hour));
+      setSlotsByMatch(slotsMap);
+
+      // 경기별 투표 / 투표-슬롯 그룹
+      const slotIdToMatch = new Map(allSlots.map((s) => [s.id, s.match_id]));
+      const votesByMatch: Record<string, { id: string; status: VoteStatus }[]> = {};
+      allVotes.forEach((v) => (votesByMatch[v.match_id] ||= []).push({ id: v.id, status: v.status }));
+      const voteSlotsByMatch: Record<string, VoteTimeSlot[]> = {};
+      allVoteSlots.forEach((vs) => {
+        const mid = slotIdToMatch.get(vs.slot_id);
+        if (mid) (voteSlotsByMatch[mid] ||= []).push(vs);
       });
-      setAttendingCounts(counts);
+
+      // 슬롯 기준 최다 인원 / 성립 여부 (슬롯 없으면 전체 참석수 폴백)
+      const stats: Record<string, { count: number; made: boolean }> = {};
+      matchesData.forEach((m) => {
+        const r = computeMatchSlotStats(
+          slotsMap[m.id] || [],
+          votesByMatch[m.id] || [],
+          voteSlotsByMatch[m.id] || [],
+          m.min_players
+        );
+        stats[m.id] = { count: r.maxCount, made: r.made };
+      });
+      setMatchStats(stats);
     } catch (error) {
       console.error('Error loading matches:', error);
     } finally {
@@ -194,7 +223,7 @@ export default function Home() {
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {upcomingMatches.map((match) => (
-                      <MatchCard key={match.id} match={match} attendingCount={attendingCounts[match.id] || 0} onClick={() => navigate(`/match/${match.id}`)} />
+                      <MatchCard key={match.id} match={match} stat={matchStats[match.id]} slots={slotsByMatch[match.id] || []} onClick={() => navigate(`/match/${match.id}`)} />
                     ))}
                   </div>
                 )}
@@ -211,7 +240,7 @@ export default function Home() {
                 ) : (
                   <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
                     {completedMatches.map((match) => (
-                      <CompactMatchCard key={match.id} match={match} attendingCount={attendingCounts[match.id] || 0} onClick={() => navigate(`/match/${match.id}`)} />
+                      <CompactMatchCard key={match.id} match={match} stat={matchStats[match.id]} slots={slotsByMatch[match.id] || []} onClick={() => navigate(`/match/${match.id}`)} />
                     ))}
                   </div>
                 )}
@@ -230,10 +259,12 @@ export default function Home() {
   );
 }
 
-function MatchCard({ match, attendingCount, onClick }: { match: Match; attendingCount: number; onClick: () => void }) {
+function MatchCard({ match, stat, slots, onClick }: { match: Match; stat?: { count: number; made: boolean }; slots: MatchTimeSlot[]; onClick: () => void }) {
   const matchDate = new Date(match.match_date);
   const isCompleted = match.status === 'completed';
   const isVotingClosed = match.vote_deadline ? new Date(match.vote_deadline) < new Date() : false;
+  const count = stat?.count ?? 0;
+  const made = stat?.made ?? false;
 
   return (
     <div
@@ -258,7 +289,7 @@ function MatchCard({ match, attendingCount, onClick }: { match: Match; attending
           <div className="flex items-center text-gray-700">
             <span className="mr-2 text-lg">📅</span>
             <span className="text-xs sm:text-sm">
-              {format(matchDate, 'yyyy년 M월 d일')} {match.match_start_time ?? 0}시 - {match.match_end_time ?? 0}시
+              {format(matchDate, 'yyyy년 M월 d일')} {matchTimeLabel(match, slots)}
             </span>
           </div>
           {match.vote_deadline && (
@@ -276,9 +307,9 @@ function MatchCard({ match, attendingCount, onClick }: { match: Match; attending
           <div className="flex items-center text-gray-700">
             <span className="mr-2 text-lg">👥</span>
             <span className="text-xs sm:text-sm">최소 {match.min_players}명</span>
-            <span className="ml-2 text-xs sm:text-sm font-medium text-blue-600">현재 {attendingCount}명</span>
-            {attendingCount >= match.min_players && (
-              <span className="ml-1 text-green-600 text-xs">✓</span>
+            <span className="ml-2 text-xs sm:text-sm font-medium text-blue-600">최다 {count}명</span>
+            {made && (
+              <span className="ml-1 text-green-600 text-xs">✓ 성립</span>
             )}
           </div>
         </div>
@@ -291,8 +322,9 @@ function MatchCard({ match, attendingCount, onClick }: { match: Match; attending
   );
 }
 
-function CompactMatchCard({ match, attendingCount, onClick }: { match: Match; attendingCount: number; onClick: () => void }) {
+function CompactMatchCard({ match, stat, slots, onClick }: { match: Match; stat?: { count: number; made: boolean }; slots: MatchTimeSlot[]; onClick: () => void }) {
   const matchDate = new Date(match.match_date);
+  const count = stat?.count ?? 0;
 
   return (
     <div
@@ -303,9 +335,9 @@ function CompactMatchCard({ match, attendingCount, onClick }: { match: Match; at
       <div className="p-3">
         <h3 className="text-sm font-semibold text-gray-800 truncate">{match.title}</h3>
         <div className="mt-1 space-y-0.5 text-xs text-gray-500">
-          <p>📅 {format(matchDate, 'M/d')} {match.match_start_time ?? 0}시-{match.match_end_time ?? 0}시</p>
+          <p>📅 {format(matchDate, 'M/d')} {matchTimeLabel(match, slots)}</p>
           <p>📍 {match.location}</p>
-          <p>👥 {attendingCount}명 참석</p>
+          <p>👥 최다 {count}명</p>
         </div>
       </div>
     </div>

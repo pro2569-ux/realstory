@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/supabase';
 import { Match, User, UserRole } from '../types';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
+import { formatSlot } from '../lib/slotUtils';
 
 const ROLE_LABELS: Record<UserRole, string> = {
   main_admin: '메인관리자',
@@ -24,6 +25,7 @@ export default function Admin() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'matches' | 'users'>('matches');
   const [matches, setMatches] = useState<Match[]>([]);
+  const [matchSlots, setMatchSlots] = useState<Record<string, number[]>>({});
   const [users, setUsers] = useState<User[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
@@ -42,6 +44,14 @@ export default function Admin() {
   async function loadMatches() {
     const { data } = await db.getMatches();
     setMatches(data || []);
+
+    const { data: slots } = await db.getAllMatchSlots();
+    const map: Record<string, number[]> = {};
+    (slots || []).forEach((s: { match_id: string; start_hour: number }) => {
+      (map[s.match_id] ||= []).push(s.start_hour);
+    });
+    Object.values(map).forEach((arr) => arr.sort((a, b) => a - b));
+    setMatchSlots(map);
   }
 
   async function loadUsers() {
@@ -170,7 +180,12 @@ export default function Admin() {
                     </span>
                   </div>
                   <div className="text-sm text-gray-600 space-y-1 mb-3">
-                    <p>📅 {format(new Date(match.match_date), 'yyyy-MM-dd')} {match.match_start_time ?? 0}시 - {match.match_end_time ?? 0}시</p>
+                    <p>
+                      📅 {format(new Date(match.match_date), 'yyyy-MM-dd')}{' '}
+                      {matchSlots[match.id]?.length
+                        ? matchSlots[match.id].map((h) => `${h}시`).join(', ')
+                        : `${match.match_start_time ?? 0}시 - ${match.match_end_time ?? 0}시`}
+                    </p>
                     <p>📍 {match.location}</p>
                   </div>
                   <div className="flex gap-2">
@@ -249,43 +264,111 @@ export default function Admin() {
 
 function MatchForm({ match, onClose }: { match: Match | null; onClose: () => void }) {
   const { user } = useAuth();
-  const [formData, setFormData] = useState({
-    title: match?.title || '',
-    description: match?.description || '',
-    match_date: match?.match_date ? format(new Date(match.match_date), 'yyyy-MM-dd') : '',
-    match_start_time: match?.match_start_time ?? 19,
-    match_end_time: match?.match_end_time ?? 21,
-    vote_deadline: match?.vote_deadline ? format(new Date(match.vote_deadline), "yyyy-MM-dd'T'HH:mm") : '',
-    location: match?.location || '',
-    min_players: match?.min_players || 10,
-    status: match?.status || 'upcoming',
-  });
+  const [title, setTitle] = useState(match?.title || '');
+  const [description, setDescription] = useState(match?.description || '');
+  const [matchDate, setMatchDate] = useState(
+    match?.match_date ? format(new Date(match.match_date), 'yyyy-MM-dd') : ''
+  );
+  const [location, setLocation] = useState(match?.location || '');
+  const [minPlayers, setMinPlayers] = useState(match?.min_players || 10);
+  const [status, setStatus] = useState<Match['status']>(match?.status || 'upcoming');
+
+  // 투표 마감: 날짜 + 시(분/초 없음)
+  const [deadlineDate, setDeadlineDate] = useState(
+    match?.vote_deadline ? format(new Date(match.vote_deadline), 'yyyy-MM-dd') : ''
+  );
+  const [deadlineHour, setDeadlineHour] = useState(
+    match?.vote_deadline ? new Date(match.vote_deadline).getHours() : 14
+  );
+  // 기존 경기엔 이미 마감값이 있으므로 '손댄 것'으로 간주 → 날짜 변경 시 자동 덮어쓰기 방지
+  const [deadlineTouched, setDeadlineTouched] = useState(!!match?.vote_deadline);
+
+  // 경기 시작 시간 슬롯 (체크한 시각들). 각 시각 = 시작 ~ 시작+2시간
+  const [selectedHours, setSelectedHours] = useState<number[]>([]);
+
+  // 수정 모드: 기존 슬롯 프리필 (슬롯 없는 레거시 경기는 기존 시작시각 1개로 폴백)
+  useEffect(() => {
+    let cancelled = false;
+    async function loadSlots() {
+      if (!match) return;
+      const { data } = await db.getMatchSlots(match.id);
+      if (cancelled) return;
+      if (data && data.length) {
+        setSelectedHours(
+          data.map((s: { start_hour: number }) => s.start_hour).sort((a, b) => a - b)
+        );
+      } else if (match.match_start_time != null) {
+        setSelectedHours([match.match_start_time]);
+      }
+    }
+    loadSlots();
+    return () => {
+      cancelled = true;
+    };
+  }, [match]);
+
+  function handleMatchDateChange(value: string) {
+    setMatchDate(value);
+    // 사용자가 마감을 손대지 않았을 때만 기본값(경기 −2일 14시) 자동 계산
+    if (value && !deadlineTouched) {
+      const d = subDays(new Date(value + 'T00:00:00'), 2);
+      setDeadlineDate(format(d, 'yyyy-MM-dd'));
+      setDeadlineHour(14);
+    }
+  }
+
+  function toggleHour(h: number) {
+    setSelectedHours((prev) =>
+      prev.includes(h) ? prev.filter((x) => x !== h) : [...prev, h].sort((a, b) => a - b)
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    if (selectedHours.length === 0) {
+      alert('경기 시작 시간을 최소 1개 이상 선택하세요.');
+      return;
+    }
+
     try {
-      // 날짜를 ISO 형식으로 변환
+      const voteDeadlineISO = deadlineDate
+        ? new Date(`${deadlineDate}T${String(deadlineHour).padStart(2, '0')}:00:00`).toISOString()
+        : null;
+
       const matchData = {
-        ...formData,
-        match_date: new Date(formData.match_date + 'T00:00:00').toISOString(),
-        vote_deadline: formData.vote_deadline ? new Date(formData.vote_deadline).toISOString() : null,
+        title,
+        description: description.trim() ? description.trim() : null,
+        match_date: new Date(matchDate + 'T00:00:00').toISOString(),
+        vote_deadline: voteDeadlineISO,
+        location,
+        min_players: minPlayers,
+        status,
       };
 
-      let result;
-
+      let matchId: string;
       if (match) {
-        result = await db.updateMatch(match.id, matchData);
+        const result = await db.updateMatch(match.id, matchData);
+        if (result.error) {
+          console.error('Error saving match:', result.error);
+          alert(`저장 중 오류가 발생했습니다: ${result.error.message}`);
+          return;
+        }
+        matchId = match.id;
       } else {
-        result = await db.createMatch({
-          ...matchData,
-          created_by: user?.id,
-        });
+        const result = await db.createMatch({ ...matchData, created_by: user?.id });
+        if (result.error || !result.data) {
+          console.error('Error saving match:', result.error);
+          alert(`저장 중 오류가 발생했습니다: ${result.error?.message ?? '알 수 없는 오류'}`);
+          return;
+        }
+        matchId = result.data.id;
       }
 
-      if (result.error) {
-        console.error('Error saving match:', result.error);
-        alert(`저장 중 오류가 발생했습니다: ${result.error.message}`);
+      const slotRes = await db.saveMatchSlots(matchId, selectedHours);
+      if (slotRes.error) {
+        console.error('Error saving slots:', slotRes.error);
+        alert(`시간 슬롯 저장 중 오류가 발생했습니다: ${slotRes.error.message}`);
         return;
       }
 
@@ -305,13 +388,11 @@ function MatchForm({ match, onClose }: { match: Match | null; onClose: () => voi
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              제목
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
             <input
               type="text"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               required
             />
@@ -319,25 +400,23 @@ function MatchForm({ match, onClose }: { match: Match | null; onClose: () => voi
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              설명
+              설명 <span className="text-xs text-gray-400">(선택)</span>
             </label>
             <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               rows={3}
-              required
+              placeholder="선택 입력"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              경기 날짜
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">경기 날짜</label>
             <input
               type="date"
-              value={formData.match_date}
-              onChange={(e) => setFormData({ ...formData, match_date: e.target.value })}
+              value={matchDate}
+              onChange={(e) => handleMatchDateChange(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               required
             />
@@ -345,90 +424,97 @@ function MatchForm({ match, onClose }: { match: Match | null; onClose: () => voi
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              투표 마감일시
+              경기 시작 시간{' '}
+              <span className="text-xs text-gray-400">(시작 ~ 시작+2시간 · 여러 개 선택 가능)</span>
             </label>
-            <input
-              type="datetime-local"
-              value={formData.vote_deadline}
-              onChange={(e) => setFormData({ ...formData, vote_deadline: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            />
-            <p className="text-xs text-gray-500 mt-1">설정하지 않으면 투표 마감 없음</p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                시작 시간
-              </label>
-              <select
-                value={formData.match_start_time}
-                onChange={(e) => setFormData({ ...formData, match_start_time: parseInt(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                required
-              >
-                {Array.from({ length: 24 }, (_, i) => (
-                  <option key={i} value={i}>
-                    {i}시
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-6 gap-2">
+              {Array.from({ length: 24 }, (_, h) => (
+                <button
+                  type="button"
+                  key={h}
+                  onClick={() => toggleHour(h)}
+                  className={`py-2 rounded-lg border text-sm font-medium transition ${
+                    selectedHours.includes(h)
+                      ? 'bg-green-500 text-white border-green-500 shadow'
+                      : 'bg-white text-gray-700 border-gray-300 hover:border-green-400'
+                  }`}
+                >
+                  {h}시
+                </button>
+              ))}
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                종료 시간
-              </label>
-              <select
-                value={formData.match_end_time}
-                onChange={(e) => setFormData({ ...formData, match_end_time: parseInt(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                required
-              >
-                {Array.from({ length: 24 }, (_, i) => (
-                  <option key={i} value={i}>
-                    {i}시
-                  </option>
-                ))}
-              </select>
-            </div>
+            {selectedHours.length > 0 && (
+              <p className="text-xs text-gray-500 mt-2">
+                선택: {selectedHours.map((h) => formatSlot(h)).join(', ')}
+              </p>
+            )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              장소
+              투표 마감일시 <span className="text-xs text-gray-400">(시 단위)</span>
             </label>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="date"
+                value={deadlineDate}
+                onChange={(e) => {
+                  setDeadlineDate(e.target.value);
+                  setDeadlineTouched(true);
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+              <select
+                value={deadlineHour}
+                onChange={(e) => {
+                  setDeadlineHour(parseInt(e.target.value));
+                  setDeadlineTouched(true);
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                {Array.from({ length: 24 }, (_, i) => (
+                  <option key={i} value={i}>
+                    {i}시
+                  </option>
+                ))}
+              </select>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              기본값: 경기 날짜 2일 전 14시 · 날짜를 비우면 마감 없음
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">장소</label>
             <input
               type="text"
-              value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              최소 인원
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">최소 인원</label>
             <input
               type="number"
-              value={formData.min_players}
-              onChange={(e) => setFormData({ ...formData, min_players: parseInt(e.target.value) })}
+              value={minPlayers}
+              onChange={(e) => setMinPlayers(parseInt(e.target.value))}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               min="1"
               required
             />
-            <p className="text-xs text-gray-500 mt-1">투표 마감 시 최소 인원 미만이면 경기 취소</p>
+            <p className="text-xs text-gray-500 mt-1">
+              마감 시 어느 한 시간대라도 최소 인원 이상이면 경기 성립
+            </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              상태
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">상태</label>
             <select
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+              value={status}
+              onChange={(e) => setStatus(e.target.value as Match['status'])}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
               <option value="upcoming">예정</option>

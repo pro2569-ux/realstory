@@ -72,16 +72,19 @@ export function shareStatsToKakao() {
 }
 
 // 경기 공유하기
-export function shareMatchToKakao(match: {
-  id: string;
-  title: string;
-  description: string;
-  match_date: string;
-  match_start_time?: number;
-  match_end_time?: number;
-  location: string;
-  vote_deadline?: string;
-}) {
+export function shareMatchToKakao(
+  match: {
+    id: string;
+    title: string;
+    description?: string | null;
+    match_date: string;
+    match_start_time?: number;
+    match_end_time?: number;
+    location: string;
+    vote_deadline?: string;
+  },
+  timeText?: string
+) {
   if (!window.Kakao) {
     alert('카카오톡 SDK가 로드되지 않았습니다. 페이지를 새로고침해주세요.');
     return;
@@ -104,12 +107,13 @@ export function shareMatchToKakao(match: {
 
     const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
     const shareUrl = `${appUrl}/match/${match.id}`;
+    const timeLine = timeText ? `\n⚽ 경기 시간: ${timeText}` : '';
 
     window.Kakao.Share.sendDefault({
       objectType: 'feed',
       content: {
         title: `⚽ ${match.title}`,
-        description: `📅 경기 일자: ${dateStr}\n⏰ 투표 마감: ${deadlineStr}`,
+        description: `📅 경기 일자: ${dateStr}${timeLine}\n⏰ 투표 마감: ${deadlineStr}`,
         imageUrl: `${appUrl}/api/og-stats?d=${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}`,
         link: {
           mobileWebUrl: shareUrl,
