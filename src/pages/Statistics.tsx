@@ -78,11 +78,13 @@ export default function Statistics() {
 
   const now = new Date();
 
-  // 2026년 + 과거 경기만, 날짜 내림차순
+  // 2026년 6~12월 + 과거 경기만, 날짜 내림차순
   const pastMatches2026 = matches
     .filter(m => {
-      const year = new Date(new Date(m.match_date).getTime() + 9 * 60 * 60 * 1000).getUTCFullYear();
-      return year === 2026 && getMatchResult(m, now) !== null;
+      const kst = new Date(new Date(m.match_date).getTime() + 9 * 60 * 60 * 1000);
+      const year = kst.getUTCFullYear();
+      const month = kst.getUTCMonth() + 1;
+      return year === 2026 && month >= 6 && getMatchResult(m, now) !== null;
     })
     .sort((a, b) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime());
 
@@ -103,7 +105,7 @@ export default function Statistics() {
 
       <main className="max-w-lg mx-auto px-4 pt-10 pb-16 space-y-6">
         <h2 className="text-xl font-bold text-gray-800 text-center">
-          2026년 메이드 주 비율
+          2026년 하반기(6~12월) 메이드 주 비율
         </h2>
 
         {loading && (
@@ -130,7 +132,7 @@ export default function Statistics() {
             {result.totalWeeks === 0 ? (
               <div className="bg-white rounded-2xl shadow p-10 text-center">
                 <p className="text-5xl mb-4">⚽</p>
-                <p className="text-gray-500">2026년 확정된 경기 데이터가 없습니다.</p>
+                <p className="text-gray-500">2026년 하반기 확정된 경기 데이터가 없습니다.</p>
               </div>
             ) : (
               <div className="bg-white rounded-2xl shadow p-8 flex flex-col items-center gap-6">

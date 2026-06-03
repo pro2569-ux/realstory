@@ -21,9 +21,11 @@ function getKSTMondayKey(dateStr: string): string {
   return `${y}-${m}-${d}`;
 }
 
-function getKSTYear(dateStr: string): number {
+// KST 기준 연/월 반환 (month: 1~12)
+function getKSTYearMonth(dateStr: string): { year: number; month: number } {
   const kstMs = new Date(dateStr).getTime() + 9 * 60 * 60 * 1000;
-  return new Date(kstMs).getUTCFullYear();
+  const d = new Date(kstMs);
+  return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1 };
 }
 
 // now를 파라미터로 받아 테스트 가능하게 유지
@@ -31,13 +33,14 @@ export function computeMadeWeekRate(
   matches: Pick<Match, 'match_date' | 'status'>[],
   now: Date = new Date()
 ): MadeWeekRateResult {
-  // 2026년 경기 중 집계 대상 필터:
+  // 2026년 6~12월 경기 중 집계 대상 필터:
   //   cancelled          → 파토 (명시적 취소)
   //   completed          → 메이드 (명시적 완료)
   //   upcoming + 날짜 경과 → 메이드 (관리자가 완료 처리 안 한 진행 경기)
   //   upcoming + 미래     → 제외 (아직 안 열린 경기)
   const relevant = matches.filter(m => {
-    if (getKSTYear(m.match_date) !== 2026) return false;
+    const { year, month } = getKSTYearMonth(m.match_date);
+    if (year !== 2026 || month < 6) return false;
     if (m.status === 'cancelled' || m.status === 'completed') return true;
     if (m.status === 'upcoming') return new Date(m.match_date) <= now;
     return false;

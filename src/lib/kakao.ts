@@ -47,8 +47,8 @@ export function shareStatsToKakao() {
     window.Kakao.Share.sendDefault({
       objectType: 'feed',
       content: {
-        title: '⚽ FC실화 2026 메이드율',
-        description: '우리 팀의 2026년 메이드 주 비율을 확인해보세요!',
+        title: '⚽ FC실화 2026 하반기 메이드율',
+        description: '우리 팀의 2026년 하반기(6~12월) 메이드 주 비율을 확인해보세요!',
         imageUrl,
         link: {
           mobileWebUrl: shareUrl,

@@ -2,8 +2,9 @@ import { ImageResponse } from '@vercel/og';
 
 export const config = { runtime: 'edge' };
 
-function getKSTYear(dateStr: string): number {
-  return new Date(new Date(dateStr).getTime() + 9 * 60 * 60 * 1000).getUTCFullYear();
+function getKSTYearMonth(dateStr: string): { year: number; month: number } {
+  const d = new Date(new Date(dateStr).getTime() + 9 * 60 * 60 * 1000);
+  return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1 };
 }
 
 function getKSTMondayKey(dateStr: string): string {
@@ -29,7 +30,8 @@ export default async function handler(_req: Request) {
 
     const weekMap = new Map<string, boolean>();
     for (const m of matches) {
-      if (getKSTYear(m.match_date) !== 2026) continue;
+      const { year, month } = getKSTYearMonth(m.match_date);
+      if (year !== 2026 || month < 6) continue;
       const isMade = m.status === 'completed' || (m.status === 'upcoming' && new Date(m.match_date) <= now);
       const isPato = m.status === 'cancelled';
       if (!isMade && !isPato) continue;
@@ -61,7 +63,7 @@ export default async function handler(_req: Request) {
       >
         {/* 타이틀 */}
         <span style={{ fontSize: 16, fontWeight: 700, color: '#92400e', marginBottom: 20 }}>
-          ⚽ FC실화 — 2026년 메이드 주 비율
+          ⚽ FC실화 — 2026년 하반기 메이드 주 비율
         </span>
 
         {/* 퍼센트 숫자 */}
