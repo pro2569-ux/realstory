@@ -9,6 +9,7 @@ import Admin from './pages/Admin';
 import Notifications from './pages/Notifications';
 import Settings from './pages/Settings';
 import Statistics from './pages/Statistics';
+import ChangePassword from './pages/ChangePassword';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -26,6 +27,11 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
+  // 관리자가 비밀번호를 초기화한 회원은 변경을 마칠 때까지 다른 페이지 접근 불가
+  if (user.must_change_password && location.pathname !== '/change-password') {
+    return <Navigate to="/change-password" replace />;
+  }
+
   return <>{children}</>;
 }
 
@@ -41,6 +47,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
+  if (user.must_change_password) return <Navigate to="/change-password" replace />;
   if (!user.is_admin) return <Navigate to="/" replace />;
 
   return <>{children}</>;
@@ -109,6 +116,14 @@ function AppRoutes() {
           <AdminRoute>
             <Statistics />
           </AdminRoute>
+        }
+      />
+      <Route
+        path="/change-password"
+        element={
+          <PrivateRoute>
+            <ChangePassword />
+          </PrivateRoute>
         }
       />
       <Route path="*" element={<Navigate to="/" />} />

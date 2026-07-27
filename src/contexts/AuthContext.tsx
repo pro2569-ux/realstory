@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { User } from '../types';
@@ -12,6 +12,7 @@ interface AuthContextType {
   signInWithKakao: () => Promise<void>;
   signOut: () => Promise<void>;
   activateDormantUser: (userId: string) => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,6 +28,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
+  // 프로필 조회 순번 — 늦게 도착한 이전 조회 응답이 최신 상태를 덮어쓰는 것을 방지
+  const profileSeqRef = useRef(0);
 
   useEffect(() => {
     // Supabase OAuth PKCE 콜백 처리: URL에 code 파라미터가 있으면
@@ -80,6 +83,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   async function fetchOrCreateUserProfile(authUser: SupabaseUser) {
+    const seq = ++profileSeqRef.current;
+    const applyUser = (userData: any) => {
+      if (seq === profileSeqRef.current) setUser(syncAdminFlag(userData));
+    };
     try {
       const { data, error } = await supabase
         .from('users')
@@ -112,17 +119,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .select('*')
               .eq('id', authUser.id)
               .single();
-            setUser(syncAdminFlag(retryData));
+            applyUser(retryData);
           } else {
             console.error('Error creating user profile:', insertError);
           }
         } else {
-          setUser(syncAdminFlag(newProfile));
+          applyUser(newProfile);
         }
       } else if (error) {
         console.error('Error fetching user profile:', error);
       } else {
-        setUser(syncAdminFlag(data));
+        applyUser(data);
       }
     } catch (error) {
       console.error('Error in fetchOrCreateUserProfile:', error);
@@ -214,6 +221,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // 프로필(users 행)을 다시 읽어 컨텍스트를 갱신 — 비밀번호 변경 후 플래그 해제 반영 등
+  async function refreshProfile() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      await fetchOrCreateUserProfile(session.user);
+    }
+  }
+
   const value = {
     user,
     supabaseUser,
@@ -223,6 +238,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signInWithKakao,
     signOut,
     activateDormantUser,
+    refreshProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

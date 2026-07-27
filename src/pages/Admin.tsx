@@ -90,6 +90,27 @@ export default function Admin() {
     loadUsers();
   }
 
+  async function handleResetPassword(targetUser: User) {
+    if (!isMainAdmin) {
+      alert('메인관리자만 비밀번호를 초기화할 수 있습니다.');
+      return;
+    }
+
+    if (!confirm(
+      `${targetUser.name}님의 비밀번호를 임시 비밀번호로 재설정하시겠습니까?\n\n재설정 후 해당 회원은 첫 로그인 때 비밀번호를 변경해야 합니다.`
+    )) return;
+
+    const { data, error } = await db.resetUserPassword(targetUser.id);
+    if (error || !data) {
+      alert(error?.message || '비밀번호 초기화 중 오류가 발생했습니다.');
+      return;
+    }
+
+    alert(
+      `${targetUser.name}님의 비밀번호가 초기화되었습니다.\n\n임시 비밀번호: ${data.tempPassword}\n\n이 비밀번호는 지금만 표시됩니다. 회원에게 직접 전달해주세요.`
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
@@ -235,6 +256,12 @@ export default function Admin() {
                           <option value="member">일반회원</option>
                           <option value="dormant">휴면회원</option>
                         </select>
+                        <button
+                          onClick={() => handleResetPassword(u)}
+                          className="text-sm border border-gray-300 rounded-lg px-2 py-1 text-gray-600 hover:bg-gray-50 transition"
+                        >
+                          비번 초기화
+                        </button>
                       </div>
                     )}
                   </div>

@@ -7,6 +7,8 @@ export interface User {
   name: string;
   is_admin: boolean;
   role: UserRole;
+  /** 관리자가 비밀번호를 초기화한 경우 true — 첫 로그인 시 변경 강제 */
+  must_change_password?: boolean;
   created_at: string;
 }
 

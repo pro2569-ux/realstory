@@ -8,6 +8,8 @@ CREATE TABLE users (
   name TEXT NOT NULL,
   is_admin BOOLEAN DEFAULT false,
   role TEXT DEFAULT 'member' CHECK (role IN ('main_admin', 'sub_admin', 'member', 'dormant')),
+  -- 관리자가 비밀번호를 초기화하면 true — 첫 로그인 시 변경 강제
+  must_change_password BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

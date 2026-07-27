@@ -276,6 +276,31 @@ export const db = {
     return { data, error };
   },
 
+  // 대표 관리자 전용: 회원 비밀번호를 랜덤 임시 비밀번호로 재설정 (서버 API 경유)
+  async resetUserPassword(userId: string) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return { data: null, error: { message: '로그인이 필요합니다.' } };
+    }
+    try {
+      const res = await fetch('/api/admin-reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ userId }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        return { data: null, error: { message: body.error || '비밀번호 초기화에 실패했습니다.' } };
+      }
+      return { data: body as { tempPassword: string; name: string }, error: null };
+    } catch {
+      return { data: null, error: { message: '네트워크 오류로 비밀번호 초기화에 실패했습니다.' } };
+    }
+  },
+
   // High score operations for lifting game
   async getHighScores() {
     const { data, error } = await supabase

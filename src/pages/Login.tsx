@@ -9,7 +9,7 @@ export default function Login() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { user, signIn, signUp, signInWithKakao, activateDormantUser } = useAuth();
+  const { user, signIn, signUp, signInWithKakao, activateDormantUser, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -53,6 +53,8 @@ export default function Login() {
           if (confirmActivate) {
             await activateDormantUser(userId);
           } else {
+            // 취소 시 세션을 정리하지 않으면 dormant 상태 그대로 앱에 진입함
+            await signOut();
             setError('휴면 해지를 취소하셨습니다. 휴면 해지 후 이용 가능합니다.');
             setLoading(false);
             return;
