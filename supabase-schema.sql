@@ -66,6 +66,8 @@ ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view all profiles" ON users
   FOR SELECT USING (true);
 
+-- 주의: 이 정책은 행 단위만 제한하므로 role/is_admin 컬럼 보호는
+-- 하단의 guard_user_privileges 트리거가 담당한다 (권한 상승 차단).
 CREATE POLICY "Users can update their own profile" ON users
   FOR UPDATE USING (
     auth.uid() = id
@@ -173,3 +175,50 @@ CREATE TRIGGER trigger_notify_new_match
   AFTER INSERT ON matches
   FOR EACH ROW
   EXECUTE FUNCTION notify_new_match();
+
+-- 함수: 권한 상승 차단 — role/is_admin의 관리자 등급 관련 변경은 main_admin만 가능
+-- (일반 가입 member/false, 휴면 해제 dormant→member 셀프 전환, SQL Editor 경로는 허용)
+CREATE OR REPLACE FUNCTION guard_user_privileges()
+RETURNS TRIGGER AS $$
+DECLARE
+  privileged_change BOOLEAN;
+  caller_role TEXT;
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    privileged_change := COALESCE(
+      NEW.is_admin = true OR NEW.role IN ('main_admin', 'sub_admin'),
+      false
+    );
+  ELSE
+    privileged_change := COALESCE(
+      NEW.is_admin IS DISTINCT FROM OLD.is_admin
+      OR (NEW.role IS DISTINCT FROM OLD.role
+          AND (NEW.role IN ('main_admin', 'sub_admin')
+               OR OLD.role IN ('main_admin', 'sub_admin'))),
+      false
+    );
+  END IF;
+
+  IF NOT privileged_change THEN
+    RETURN NEW;
+  END IF;
+
+  IF auth.uid() IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT role INTO caller_role FROM users WHERE id = auth.uid();
+
+  IF caller_role IS DISTINCT FROM 'main_admin' THEN
+    RAISE EXCEPTION '관리자 권한 변경은 대표 관리자만 할 수 있습니다'
+      USING ERRCODE = '42501';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_guard_user_privileges
+  BEFORE INSERT OR UPDATE ON users
+  FOR EACH ROW
+  EXECUTE FUNCTION guard_user_privileges();
