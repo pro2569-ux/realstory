@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/supabase';
@@ -28,6 +28,8 @@ export default function Admin() {
   const [users, setUsers] = useState<User[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
+  // 초기화 직후 임시 비밀번호를 보여줄 모달 (한 번만 표시되므로 닫기 전에 복사해야 함)
+  const [resetResult, setResetResult] = useState<{ name: string; tempPassword: string } | null>(null);
 
   const isMainAdmin = user?.role === 'main_admin';
 
@@ -106,9 +108,7 @@ export default function Admin() {
       return;
     }
 
-    alert(
-      `${targetUser.name}님의 비밀번호가 초기화되었습니다.\n\n임시 비밀번호: ${data.tempPassword}\n\n이 비밀번호는 지금만 표시됩니다. 회원에게 직접 전달해주세요.`
-    );
+    setResetResult({ name: data.name || targetUser.name, tempPassword: data.tempPassword });
   }
 
   return (
@@ -271,6 +271,122 @@ export default function Admin() {
           </>
         )}
       </main>
+
+      {resetResult && (
+        <TempPasswordModal result={resetResult} onClose={() => setResetResult(null)} />
+      )}
+    </div>
+  );
+}
+
+// 클립보드 복사 — HTTPS가 아닌 환경이나 구형 브라우저에서는 execCommand로 폴백
+async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // 폴백으로 계속 진행
+  }
+
+  try {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+function TempPasswordModal({
+  result,
+  onClose,
+}: {
+  result: { name: string; tempPassword: string };
+  onClose: () => void;
+}) {
+  const [copied, setCopied] = useState<'password' | 'message' | null>(null);
+  const [copyFailed, setCopyFailed] = useState(false);
+  const copiedTimer = useRef<number | undefined>(undefined);
+
+  useEffect(() => () => window.clearTimeout(copiedTimer.current), []);
+
+  const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+  const guideMessage =
+    `[FC실화] ${result.name}님의 비밀번호가 초기화되었습니다.\n\n` +
+    `임시 비밀번호: ${result.tempPassword}\n\n` +
+    `아래 주소에서 이 비밀번호로 로그인하신 뒤 새 비밀번호를 설정해주세요.\n${appUrl}/login`;
+
+  async function handleCopy(kind: 'password' | 'message') {
+    const ok = await copyToClipboard(kind === 'password' ? result.tempPassword : guideMessage);
+    if (!ok) {
+      setCopyFailed(true);
+      return;
+    }
+    setCopyFailed(false);
+    setCopied(kind);
+    window.clearTimeout(copiedTimer.current);
+    copiedTimer.current = window.setTimeout(() => setCopied(null), 2000);
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md">
+        <h3 className="text-lg font-bold text-gray-900 mb-1">비밀번호 초기화 완료</h3>
+        <p className="text-sm text-gray-500 mb-4">
+          {result.name}님의 임시 비밀번호입니다.
+        </p>
+
+        <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4 mb-3">
+          <p className="text-xs text-gray-500 mb-1">임시 비밀번호</p>
+          <p className="text-2xl font-mono font-bold text-gray-900 tracking-wider select-all break-all">
+            {result.tempPassword}
+          </p>
+        </div>
+
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-4">
+          <p className="text-yellow-800 text-sm">
+            이 비밀번호는 지금만 표시됩니다. 창을 닫기 전에 복사해서 회원에게 전달해주세요.
+          </p>
+        </div>
+
+        {copyFailed && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
+            <p className="text-red-700 text-sm">
+              자동 복사에 실패했습니다. 위 비밀번호를 길게 눌러 직접 복사해주세요.
+            </p>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <button
+            onClick={() => handleCopy('password')}
+            className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white py-3 rounded-xl font-medium hover:from-green-600 hover:to-blue-600 transition shadow-lg"
+          >
+            {copied === 'password' ? '복사되었습니다' : '비밀번호 복사'}
+          </button>
+          <button
+            onClick={() => handleCopy('message')}
+            className="w-full border-2 border-gray-200 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-50 transition"
+          >
+            {copied === 'message' ? '복사되었습니다' : '안내 메시지 통째로 복사'}
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full text-gray-400 hover:text-gray-600 py-2 text-sm transition"
+          >
+            닫기
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
